@@ -2,138 +2,20 @@ from datetime import datetime
 import os
 import json
 
+from input_functions import get_Category, get_Amount, get_Description
+from file_ops import save_expenses, load_expenses, delete_last_expense
+from expense_views import filter_expenses_by_date, todays_expenses, category_expenses
+
 #expenses = [{'date': '08-09-2025 23:57:42', 'category': 'Groceries', 'amount': 87.99, 'description': 'Grocery shop at coles'}, 
             #{'date': '08-09-2025 23:58:33', 'category': 'Travel', 'amount': 12.65, 'description': 'Uber to work'}]
 
-def get_Category():
-    categories = [
-        "Food and Dining",
-        "Travel",
-        "Utilities",
-        "Entertainment",
-        "Upgrades",
-        "Health and Fitness",
-        "Education",
-        "Shopping",
-        "Groceries",
-        "Miscellaneous"
-    ]
 
-    for i, category in enumerate(categories, start=1):
-        print(f"{i}. {category}")
 
-    while True:
-        try:
-            choice = int(input("\nSelect a category: "))
-            if 1<= choice <= len(categories):
-                print(f"You selected: {categories[choice - 1]}")
-                return categories[choice - 1]
-            else:
-                raise ValueError("Invalid option. Please select a valid category number.")
-        except ValueError:
-            print("Invalid input, please enter a number corresponding to a category instead.")
 
-def get_Amount():
-    while True:
-        try:
-            amount = float(input("Enter Amount: "))
-            if amount <0:
-                raise ValueError("Amount cannot be negative. Please enter a valid amount.")
-            return amount
-        except ValueError:
-            print("Invalid amount. Please enter a numeric value.")
-
-def get_Description():
-    description = input("Enter short description: ")
-    description = description.strip()
-    if not description:
-        description = "No Description"
-    return description
 
 def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def save_expenses():
-    try:
-        with open('expenses.json', 'w') as file:
-            json.dump(expenses, file)
-    except Exception as e:
-        print(f"Error saving file{e}")
-
-def load_expenses():
-    try:
-        with open('expenses.json', 'r') as file:
-            return json.load(file)
-    except Exception as e:
-        print(f"Error loading existing expenses: {e}")
-        return []
-
-def filter_expenses_by_date():
-    while True: 
-        date_str = input("Enter date (DD-MM-YYYY) or Leave empty for today's expenses: ")
-        date_str = date_str.strip()
-        try:
-            if not date_str:
-                filtered_expenses = todays_expenses()
-                print("\nToday's Expenses:")
-            else:
-                filter_date = datetime.strptime(date_str, "%d-%m-%Y").date()
-                filtered_expenses = [expense for expense in expenses if datetime.strptime(expense['date'], "%d-%m-%Y %H:%M:%S").date() == filter_date]
-                print(f"\nExpenses on '{date_str}':")
-            if filtered_expenses:
-                
-                print(f"{'Date':<20} | {'Category':<20} | {'Amount':<10} | {'Description':<30}")
-                print("-" * 80)
-                for expense in filtered_expenses:
-                    print(f"{expense['date']:<20} | {expense['category']:<20} | ${expense['amount']:<10.2f} | {expense['description']:<30}")
-                input("\nPress Enter to continue...")
-                break
-            else:
-                print(f"No expenses found on '{date_str}'.")
-                break
-        except ValueError:
-            print("Invalid date format. Please enter the date in DD-MM-YYYY format.")
-
-def todays_expenses():
-    today = datetime.now().date()
-    todays_expenses = [expense for expense in expenses if datetime.strptime(expense['date'], "%d-%m-%Y %H:%M:%S").date() == today]
-    return todays_expenses
-
-def category_expenses():
-    category_totals = {}
-    for expense in expenses:
-        category = expense['category']
-        amount = expense['amount']
-        if category in category_totals:
-            category_totals[category] += amount
-        else:
-            category_totals[category] = amount
-    
-    print(f"{'Category':<20} | {'Total Amount':<15}")
-    print("-" * 40)
-    for category, total in category_totals.items():
-        print(f"{category:<20} | ${total:<15.2f}")
-
-    print("-" * 40)
-    total_expenses = sum(category_totals.values())
-    print(f"{'Total':<20} | ${total_expenses:<15.2f}")
-    input("\nPress Enter to continue...")
-
-def delete_last_expense():
-    if expenses:
-        last_expense = expenses[-1]
-        confirm = input(f"Last expense: \n"
-                         f"Date: {last_expense['date']}\n"
-                         f"Category: {last_expense['category']}\n"
-                         f"Amount: ${last_expense['amount']}\n"
-                         f"Description: {last_expense['description']}\n"
-                         f"Press n to cancel, any other key to confirm deletion: ")
-        if confirm.lower() != 'n':
-            expenses.pop()
-            print(f"Deleted last expense: {last_expense}")
-            save_expenses()
-    else:
-        print("No expenses to delete.")
 
 
 # Daily Expense Tracker, refreshes each day to 0 expenses function
@@ -166,7 +48,7 @@ while True:
             if confirm in ['y', 'yes', '']:
                 expenses.append({"date": date, "category": category, "amount": amount, "description": description})
                 print("Expense saved successfully!")
-                save_expenses()
+                save_expenses(expenses)
                 clear_console()
                 break
 
@@ -187,7 +69,7 @@ while True:
 
     elif choice == '3': #Total expenses
         clear_console()
-        category_expenses()
+        category_expenses(expenses)
 
     elif choice == '4': #View expense by category
         clear_console()
@@ -199,20 +81,22 @@ while True:
             print("-" * 80)
             for expense in filtered_expenses:
                 print(f"{expense['date']:<20} | {expense['category']:<20} | ${expense['amount']:<10.2f} | {expense['description']:<30}")
-                input("\nPress Enter to continue...")
+            input("\nPress Enter to continue...")
         else:
             print(f"No expenses found in category '{category}'.")        
     
     elif choice == '5': #View expense by date
         clear_console()
-        filter_expenses_by_date()
+        filter_expenses_by_date(expenses)
 
     elif choice == '6': #Delete last expense
         clear_console()
-        delete_last_expense()
+        delete_last_expenses(expenses)
+        save_expenses(expenses)
+
     
     elif choice == '7': #Exit
-        save_expenses()
+        save_expenses(expenses)
         print("See ya later samurai")
         break
 
