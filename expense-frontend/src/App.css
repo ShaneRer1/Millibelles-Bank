@@ -222,6 +222,11 @@ td {
 
 .chart-container {
   margin-top: 30px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 20px;
 }
 
 .filter-container {
@@ -282,4 +287,37 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   gap: 8px;
   margin-top: 8px;
   align-items: center;
+}
+
+.budget-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.budget-input {
+  width: 90px;
+  padding: 8px 16px;
+  border: 1px solid #4a3f6b;
+  background-color: #0d0d1a;
+  color: #d4c9a8;
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  height: 34px;
+  box-sizing: border-box;
+}
+
+.budget-inline .btn-add,
+.budget-inline .btn-delete {
+  height: 34px;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+
+.budget-inline .btn-add {
+  height: 34px;
+  width: 34px;
+  padding: 0;
+  box-sizing: border-box;
+  text-align: center;
 }

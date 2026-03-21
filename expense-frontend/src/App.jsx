@@ -4,7 +4,7 @@ import ParticleBackground from "./ParticleBackground"
 import banker from "./banker.webp"
 import cornerTL from "./corner-tl.png"
 import cornerBR from "./corner-br.png"
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
+import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell } from "recharts"
 
 
 
@@ -250,7 +250,7 @@ function App() {
       
 
         <div className = "form-container">
-          <h2> View Expenses </h2>
+          <h2> Search: </h2>
           <div className = "filter-container">
             <div className = "date-filter">
               <span className = "filterLabel"> From; </span>
@@ -356,21 +356,24 @@ function App() {
               <div key={category} className="summary-row">
                 <div className="summary-row-info">
                   <span>{category}</span>
+                  <div className="budget-input-row">
                   <span>{total} Geo {budget ? ` / ${budget} Geo` : ""}</span>
-                </div>
-                <div className="budget-input-row">
+                
                   <input 
-                    className="form-input"
+                    className="budget-input"
                     type="number"
-                    placeholder="Set Budget"
+                    placeholder="Limit"
                     value={budgetInputs[category] || ""}
                     onChange={(e) => setBudgetInputs({...budgetInputs, [category]: e.target.value})}
                   />
-                  <button className="btn-add" onClick={() => handleSetBudget(category, budgetInputs[category])}>Set</button>
-                  {budgets[category] && (
-                    <button className="btn-delete" onClick={() => handleRemoveBudget(category)}>Remove</button>
-                  )}
+                  <button className="btn-add" onClick={() => handleSetBudget(category, budgetInputs[category])}>✓</button>
+                  
+                    <button className="btn-delete" onClick={() => handleRemoveBudget(category)}
+                    disabled = {!budgets[category]}
+                    style={{ opacity: budgets[category] ?1: 0.2, cursor: budgets[category] ? "pointer" : "default"}}>✕</button>
+                  
                 </div>
+              </div>
                 {percentage !== null && (
                   <div className = "progress-bar-container">
                     <div className = "progress-bar" style={{ width: `${Math.min(percentage, 100)}%`, backgroundColor: barColor }}></div>
@@ -387,25 +390,31 @@ function App() {
             </div>
             <div className="chart-container">
               <h2> Spending Breakdown</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={Object.entries(summary).map(([category, total]) => ({ category, total }))}
-                  style = {{ background : "transparent"}}>
-                <XAxis dataKey="category" tick = {{ fill : "#9b8fc4", fontFamily: "Cinzel, serif", fontSize: 11}} />
-                <YAxis tick = {{ fill : "#9b8fc4", fontFamily: "Cinzel, serif", fontSize: 11}} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "#111128", border: "1px solid #4a3f6b", fontFamily: "Cinzel, serif" }}
-                  labelStyle={{ color: "#9b8fc4", }}
-                  itemStyle={{color : "#d4c9a8"}}
-                  formatter={(value) => [`${value} Geo`, "Amount"]}
-                />
-                <Bar dataKey="total" >
-                  {Object.entries(summary).map(([category], index) => (
-                    <Cell 
-                    key={category}
-                    fill={["#4a3f6b", "#6b5a9e", "#9b8fc4", "#2d2550", "#7c6fa0", "#3d3460"][index % 6]}
-                    />                  ))}
-                </Bar>
-                </BarChart>
+              <ResponsiveContainer width="100%" height={400}>
+                <PieChart>
+                  <Pie
+                    data={Object.entries(summary).map(([category, total]) => ({ name: category, value: total }))}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={120}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine = {{ stroke: "#9b8fc4"}}
+                    style = {{ fontSize: "23px", fontFamily: "Cinzel, serif"}}
+                  >
+                    {Object.entries(summary).map(([category], index) => (
+                      <Cell
+                        key={category}
+                        fill={["#7c6fa0", "#9b8fc4", "#b8aed4", "#6b5a9e", "#c4b8e0", "#4a3f6b"][index % 6]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#111128", border: "1px solid #4a3f6b", fontFamily: "Cinzel" }}
+                    formatter={(value) => [`${value} Geo`, "Amount"]}
+                  />
+                </PieChart>
               </ResponsiveContainer>
             </div>
 
