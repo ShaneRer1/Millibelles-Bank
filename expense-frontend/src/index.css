@@ -1,0 +1,17 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #0d0d1a;
+  color: #d4c9a8;
+  font-family: 'Cinzel', serif;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+canvas {
+  display: block;
+}

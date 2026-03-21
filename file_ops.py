@@ -33,6 +33,26 @@ def delete_last_expense(expenses):
         if confirm.lower() != 'n':
             expenses.pop()
             print(f"Deleted last expense: {last_expense}")
-            save_expenses()
+            save_expenses(expenses)
     else:
         print("No expenses to delete.")
+
+def save_budgets(budgets):
+    try:
+        with open('budgets.json', 'w') as file:
+            json.dump(budgets, file)
+    except Exception as e:
+        print(f"Error saving budgets: {e}")
+
+def load_budgets():
+    try:
+        with open('budgets.json', 'r') as file:
+            content = file.read()
+            if not content:
+                return {}
+            return json.loads(content)
+    except FileNotFoundError:
+        return {}
+    except Exception as e:
+        print(f"Error loading budgets: {e}")
+        return {}

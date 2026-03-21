@@ -5,18 +5,12 @@ import json
 from input_functions import get_Category, get_Amount, get_Description
 from file_ops import save_expenses, load_expenses, delete_last_expense
 from expense_views import filter_expenses_by_date, todays_expenses, category_expenses
+from expense_operations import edit_expense
 
 #expenses = [{'date': '08-09-2025 23:57:42', 'category': 'Groceries', 'amount': 87.99, 'description': 'Grocery shop at coles'}, 
             #{'date': '08-09-2025 23:58:33', 'category': 'Travel', 'amount': 12.65, 'description': 'Uber to work'}]
-
-
-
-
-
 def clear_console():
     os.system('cls' if os.name == 'nt' else 'clear')
-
-
 
 # Daily Expense Tracker, refreshes each day to 0 expenses function
 while True:
@@ -30,7 +24,8 @@ while True:
     "4. View expense by category\n" \
     "5. View expense by date\n" \
     "6. Delete last expense\n" \
-    "7. Exit\n")
+    "7. Edit expense\n" \
+    "8. Exit\n")
     choice = input("Enter Choice: ")
 
     if choice == '1': #Add expense
@@ -63,7 +58,7 @@ while True:
         print(f"{'Date':<20} | {'Category':<20} | {'Amount':<10} | {'Description':<30}")
         print("-" * 80)
         for expense in expenses:
-            print(f"{expense['date']:<20} | {expense['category']:<20} | ${expense['amount']:<10.2f} | {expense['description']:<30}")
+            print(f"{expense['date']:<20} | {expense['category']:<20} | ${expense['amount']:<9.2f} | {expense['description']:<30}")
             #print(expense)
         input("\nPress Enter to continue...")
 
@@ -91,11 +86,16 @@ while True:
 
     elif choice == '6': #Delete last expense
         clear_console()
-        delete_last_expenses(expenses)
+        delete_last_expense(expenses)
+        save_expenses(expenses)
+
+    elif choice == '7': #Edit expense
+        clear_console()
+        edit_expense(expenses)
         save_expenses(expenses)
 
     
-    elif choice == '7': #Exit
+    elif choice == '8': #Exit
         save_expenses(expenses)
         print("See ya later samurai")
         break
