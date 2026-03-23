@@ -5,7 +5,7 @@
 }
 
 body {
-  background-color: #0d0d1a;
+  /*background-color: #0d0d1a;*/
   color: #d4c9a8;
   font-family: 'Cinzel', serif;
   min-height: 100vh;
@@ -14,4 +14,47 @@ body {
 }
 canvas {
   display: block;
+}body
+
+.fog-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(100, 80, 160, 0.04) 25%,
+    transparent 50%,
+    rgba(80, 60, 140, 0.03) 75%,
+    transparent 100%
+  );
+  animation: fogDrift 20s linear infinite;
+}
+
+.fog-layer-2 {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(60, 40, 120, 0.03) 30%,
+    transparent 60%,
+    rgba(100, 80, 160, 0.04) 80%,
+    transparent 100%
+  );
+  animation: fogDrift 35s linear infinite reverse;
+}
+
+@keyframes fogDrift {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0%); }
 }

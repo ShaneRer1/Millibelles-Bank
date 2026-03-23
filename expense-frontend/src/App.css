@@ -14,13 +14,41 @@
   margin-bottom:40px;
   /* border-bottom:2px solid #4a3f6b; */
   padding-bottom:20px;
+  margin-left: -150px;
 
 }
 
 .banker-img {
-  width: 250px;
+  width: 450px;
   opacity: 0.9;
-  
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 20%,
+    black 80%,
+    transparent 100%
+  ), linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
+  mask-composite: intersect;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 20%,
+    black 80%,
+    transparent 100%
+  ), linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
+  -webkit-mask-composite: source-in;
 }
 
 h1 {
@@ -29,9 +57,8 @@ h1 {
   color: #d4c9a8;
   letter-spacing: 4px;
   text-transform: uppercase;
-  border-bottom: 2px solid #4a3f6b;
   margin: 0;
-  margin-left: -120px;
+  margin-left: -200px;
 }
 
 h2 {
@@ -46,7 +73,8 @@ h2 {
   margin-bottom: 40px;
   padding: 20px;
   border: 1px solid #4a3f6b;
-  background-color: #111128;
+  background-color: rgba(10, 10, 30, 0.7);
+  backdrop-filter: blur(8px);
 }
 
 .form-fields {
@@ -131,7 +159,7 @@ h2 {
 .corner-tl {
   position:absolute;
   top:-160px;
-  left:-170px;
+  left:-190px;
   width:800px;
   opacity:0.8;
   pointer-events: none;

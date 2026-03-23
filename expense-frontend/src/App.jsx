@@ -237,6 +237,7 @@ function App() {
       <ParticleBackground />
       
       
+      
       <div className = "header">
         <img src={banker} alt="Banker" className="banker-img" />
         <h1> Millibelles Bank </h1> 
