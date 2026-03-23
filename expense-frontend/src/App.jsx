@@ -4,8 +4,7 @@ import ParticleBackground from "./ParticleBackground"
 import banker from "./banker.webp"
 import cornerTL from "./corner-tl.png"
 import cornerBR from "./corner-br.png"
-import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell } from "recharts"
-
+import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts"
 
 
 function App() {
@@ -65,8 +64,7 @@ function App() {
       })
       if (!response.ok) throw new Error("")
       const data = await response.json()
-      setExpenses([ data.expense, ...expenses])
-      setCategory("")
+      setExpenses([data.expense, ...expenses])
       setAmount("")
       setDescription("")
       fetchSummary()
@@ -187,6 +185,41 @@ function App() {
 
     return matchesDate && matchesDesc && matchesCategory
   })
+
+  const fillMissingDates = (data) => {
+    if (data.length == 0) return data
+    const filled =[]
+    const start = new Date(data[0].date)
+    const end = new Date(data[data.length - 1].date)
+    const dateMap = Object.fromEntries(data.map(d =>[d.date, d.total]))
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split("T")[0]
+      filled.push({date: dateStr.slice(5), total: dateMap[dateStr] || 0})
+    }
+    return filled
+  }
+
+const sevenDaysAgo = new Date ()
+sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7)
+
+const recentExpenses = expenses.filter( expense =>
+  new Date(expense.date) >= sevenDaysAgo
+  )
+
+  const trendData = fillMissingDates(
+    Object.entries(
+      recentExpenses.reduce((acc, expense) =>{
+        const date = expense.date.split( " ")[0]
+        acc[date] = (acc[date] || 0) + expense.amount
+        return acc
+      }, {})
+    ).map(([date, total]) => ({ date, total}))
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+  )
+
+
+
 
   async function fetchBudgets() {
     try {
@@ -418,6 +451,38 @@ function App() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
+
+            <div className = "chart-container">
+              <h2>Spending Trends — {sevenDaysAgo.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit' })} to {new Date().toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit' })}</h2>
+              <ResponsiveContainer width = "100%" height={300}>
+                <LineChart data = {trendData} margin={{top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray = "3 3" stroke="#4a3f6b" />
+                  <XAxis 
+                    dataKey = "date"
+                    tick={{ fill: "#D4C9A8", fontFamily: "Cinzel", fontSize: 17}}
+                  />
+                  <YAxis
+                    tick={{ fill: "#D4C9A8", fontFamily: "Cinzel", fontSize: 18}}
+                  />
+                  <Tooltip
+                    contentStyle={{backgroundColor: "#111128", border: "1px solid #4a3f6b", fontFamily: "Cinzel" }}
+                    labelStyle={{color: "#9b8fc4"}}
+                    itemStyle={{color: "d4c9a8"}}
+                    formater = {(value) => [`${value} Geo`, "Spent"]}
+                  />
+
+                  <Line
+                    type="monotone"
+                    dataKey = "total"
+                    stroke = "#D4C9A8"
+                    strokeWidth={2}
+                    dot = {{ fill:"9b8f4c", r: 4}}
+                    activeDot={{ fill: "#D4C9A8", r: 6}}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
 
                 
 
