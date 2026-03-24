@@ -3,10 +3,9 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-#from file_ops import load_expenses, save_expenses, save_budgets, load_budgets
 from datetime import datetime
 import uuid
-from database import get_db, init_db, Expense as ExpenseModel, Budget as BudgetModel
+from database import get_db, init_db, Expense as ExpenseModel, Budget as BudgetModel, Income as IncomeModel, OneOffIncome as OneOffIncomeModel
 from sqlalchemy.orm import Session
 
 app = FastAPI()
@@ -29,6 +28,15 @@ class Expense(BaseModel):
 class Budget(BaseModel):
     category: str
     limit: float = Field(gt = 0, description="Budget limit must be a positive number")
+
+class IncomeEntry(BaseModel):
+    amount: float = Field(gt=0, description="Amount must be positive")
+    source: str
+    notes: str= ""
+
+class OneOffIncomeEntry(BaseModel):
+    amount: float = Field(gt=0, description="Amount must be positive")
+    description: str
 
 
 #GET all expenses
@@ -124,3 +132,94 @@ def delete_budget(category: str, db : Session = Depends(get_db)):
     db.delete(budget)
     db.commit()
     return { "message": f"Budget removed for {category}"}
+
+#GET all income entries
+@app.get("/income")
+def get_income(db: Session = Depends(get_db)):
+    return db.query(IncomeModel).order_by(IncomeModel.date.desc()).all()
+
+#POST a new income entry
+@app.post("/income")
+def add_income(entry: IncomeEntry, db : Session = Depends(get_db)):
+    new_income = IncomeModel(
+        id = str(uuid.uuid4()),
+        amount = entry.amount,
+        source = entry.source,
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        notes = entry.notes
+    )
+    db.add(new_income)
+    db.commit()
+    db.refresh(new_income)
+    return {"message": "Income added successfully", "income": new_income}
+
+#DELETE an income entry
+@app.delete("/income/{income_id}")
+def delete_income( income_id: str, db: Session = Depends(get_db)):
+    entry = db.query(IncomeModel).filter(IncomeModel.id == income_id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Income entry not found")
+    db.delete(entry)
+    db.commit()
+    return {"message": f"Income entry {income_id} deleted successfully"}
+
+# ONE-OFF-INCOME----------------------------------------------------------------------
+
+#GET all OO Incomes
+@app.get("/income/one-off")
+def get_one_off_income( db: Session = Depends(get_db)):
+    return db.query(OneOffIncomeModel).order_by(OneOffIncomeModel.date.desc()).all()
+
+
+#POST a new OO income entry
+@app.post("/income/one-off")
+def add_one_off_income(entry: OneOffIncomeEntry, db: Session = Depends(get_db)):
+    new_entry = OneOffIncomeModel(
+        id = str(uuid.uuid4()),
+        amount = entry.amount,
+        description = entry.description,
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    )
+    db.add(new_entry)
+    db.commit()
+    db.refresh(new_entry)
+    return {"message": "Income added successfully", "income": new_entry}
+
+#DELETE a OO Income entry
+@app.delete("/income/one-off/{entry_id}")
+def delete_one_off_income( entry_id: str, db: Session = Depends(get_db)):
+    entry = db.query(OneOffIncomeModel).filter(OneOffIncomeModel.id == entry_id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="One Off Income entry not found")
+    db.delete(entry)
+    db.commit()
+    return {"message": f"Income entry {entry_id} deleted successfully"}
+
+
+#   BALANCE----------------------------------------------------------------------------------
+
+#GET new balance, filterable by month
+@app.get("/balance")
+def get_balance(month: str = None, db: Session = Depends(get_db)):
+    income_query = db.query(IncomeModel).all()
+    one_off_query = db.query(OneOffIncomeModel).all()
+    expense_query = db.query(ExpenseModel).all()
+
+    if month:
+        income_query= [i for i in income_query if i.date.startswith(month)]
+        one_off_query= [i for i in one_off_query if i.date.startswith(month)]
+        expense_query= [e for e in expense_query if e.date.startswith(month)]
+
+    total_income = round(sum(i.amount for i in income_query), 2)
+    total_one_off = round(sum(i.amount for i in one_off_query), 2)
+    total_expenses = round(sum(e.amount for e in expense_query), 2)
+
+    net_balance = round(total_income + total_one_off - total_expenses, 2)
+
+    return {
+        "month": month or "all-time",
+        "total_income" : total_income,
+        "total_one_off": total_one_off,
+        "total_expenses":total_expenses,
+        "net_balance" : net_balance
+    }

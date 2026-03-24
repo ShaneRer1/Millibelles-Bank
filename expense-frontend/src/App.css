@@ -268,6 +268,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
   cursor: pointer;
 }
+input[type="month"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) sepia(1) saturate(2) hue-rotate(5deg);
+  cursor: pointer;
+}
 
 .date-filter {
   display: flex;
@@ -405,4 +409,106 @@ td > .btn-add, td > .btn-delete {
   margin-bottom: 4px;
   width: 100%;
 }
+}
+
+.balance-bar {
+  background: rgba(10, 10, 30, 0.7);
+  border: 1px solid #4a3f6b;
+  backdrop-filter: blur(8px);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.balance-month-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.balance-month-label {
+  color: #9b8fc4;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.balance-figures {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.balance-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 120px;
+  padding: 12px;
+  border: 1px solid #4a3f6b;
+  background: rgba(255,255,255,0.02);
+}
+
+.balance-net {
+  border-color: #9b8fc4;
+}
+
+.balance-label {
+  color: #9b8fc4;
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.balance-value {
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+}
+
+.income-positive {
+  color: #6dbf8f;
+}
+
+.income-negative {
+  color: #c0392b;
+}
+
+.form-mode-toggle {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.toggle-active {
+  background-color: #4a3f6b;
+  color: #d4c9a8;
+  border-color: #9b8fc4;
+}
+
+.form-mode-toggle .toggle-btn {
+  margin-bottom: 0;
+}
+
+.toggle-separator {
+  color: #4a3f6b;
+  font-size: 0.85rem;
+  align-self: center;
+}
+.row-income td:first-child {
+  border-left: 3px solid #6dbf8f;
+}
+
+.row-expense td:first-child {
+  border-left: 3px solid #4a3f6b;
+}
+.balance-month-picker .toggle-btn {
+  margin-bottom: 0;
 }

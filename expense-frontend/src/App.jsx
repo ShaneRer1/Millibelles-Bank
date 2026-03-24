@@ -4,8 +4,10 @@ import ParticleBackground from "./ParticleBackground"
 import banker from "./banker.webp"
 import cornerTL from "./corner-tl.png"
 import cornerBR from "./corner-br.png"
-import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts"
-
+import SummaryView from "./components/SummaryView"
+import ExpenseTable from "./components/ExpenseTable"
+import ExpenseForm from "./components/ExpenseForm"
+import BalanceBar from "./components/BalanceBar"
 
 function App() {
   const [expenses, setExpenses] = useState([])
@@ -35,6 +37,15 @@ function App() {
   const [budgetInputs, setBudgetInputs] = useState({})
   
 
+  const [income, setIncome] = useState([])
+  const [oneOffIncome, setOneOffIncome] = useState([])
+  const [balance, setBalance] = useState(null)
+  const [balanceMonth, setBalanceMonth] = useState("")
+  const [incomeAmount, setIncomeAmount] = useState("")
+  const [incomeSource, setIncomeSource] = useState("")
+  const [incomeNotes, setIncomeNotes] = useState("")
+  const [oneOffAmount, setOneOffAmount] = useState("")
+  const [oneOffDescription, setOneOffDescription] = useState("")
 
 
   async function handleSubmit() {
@@ -114,6 +125,10 @@ function App() {
     } 
 
     fetchExpenses()
+    fetchSummary()
+    fetchBudgets()
+    fetchIncome()
+    fetchBalance("")
 
   }, [])
 
@@ -130,9 +145,7 @@ function App() {
 
     }
   
-    useEffect(() => {    
-    fetchSummary()
-  }, [])
+    
 
   function handleEdit(expense) {
     setEditingId(expense.id)
@@ -250,9 +263,7 @@ const recentExpenses = expenses.filter( expense =>
     }
   }
   
-  useEffect(() => {
-    fetchBudgets()
-  }, [])
+  
 
   async function handleSetBudget(category, limit) {
     if (!limit || parseFloat(limit) <= 0) return
@@ -282,6 +293,87 @@ const recentExpenses = expenses.filter( expense =>
     }
   }
 
+  async function fetchIncome() {
+    try {
+      const [incomeRes, oneOffRes] = await Promise.all([
+        fetch("http://localhost:8000/income"),
+        fetch("http://localhost:8000/income/one-off")
+      ])
+      const incomeData = await incomeRes.json()
+      const oneOffData = await oneOffRes.json()
+      setIncome(incomeData)
+      setOneOffIncome(oneOffData)
+    } catch (error) {
+      setError("Failed to fetch income data")
+    }
+  }
+
+  async function fetchBalance(month) {
+    try {
+      const url = month
+        ? `http://localhost:8000/balance?month=${month}`
+        : "http://localhost:8000/balance"
+      const res = await fetch(url)
+      const data = await res.json()
+      setBalance(data)
+    } catch (error) {
+      setError("Failed to fetch balance")
+    }
+  }
+
+  async function handleAddIncome() {
+    if (!incomeAmount || parseFloat(incomeAmount) <= 0) { setError("Please enter a valid amount"); return }
+    if (!incomeSource.trim()) { setError("Please enter a source"); return }
+    setError("")
+    try {
+      const res = await fetch("http://localhost:8000/income", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: parseFloat(incomeAmount), source: incomeSource, notes: incomeNotes })
+      })
+      
+      if (!res.ok) throw new Error("")
+      const data = await res.json()
+      setIncome(prev => [data.income, ...prev])
+      setIncomeAmount(""); setIncomeSource(""); setIncomeNotes("")
+      fetchBalance(balanceMonth)
+    } catch { setError("Failed to add income") }
+  }
+
+  async function handleAddOneOff() {
+    if (!oneOffAmount || parseFloat(oneOffAmount) <= 0) { setError("Please enter a valid amount"); return }
+    if (!oneOffDescription.trim()) { setError("Please enter a description"); return }
+    setError("")
+    try {
+      const res = await fetch("http://localhost:8000/income/one-off", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: parseFloat(oneOffAmount), description: oneOffDescription })
+      })
+      if (!res.ok) throw new Error("")
+      const data = await res.json()
+      setOneOffIncome(prev => [data.income, ...prev])
+      setOneOffAmount(""); setOneOffDescription("")
+      fetchBalance(balanceMonth)
+    } catch { setError("Failed to add one-off income") }
+  }
+
+  async function handleDeleteIncome(id) {
+    try {
+      await fetch(`http://localhost:8000/income/${id}`, { method: "DELETE" })
+      setIncome(prev => prev.filter(i => i.id !== id))
+      fetchBalance(balanceMonth)
+    } catch { setError("Failed to delete income entry") }
+  }
+
+  async function handleDeleteOneOff(id) {
+    try {
+      await fetch(`http://localhost:8000/income/one-off/${id}`, { method: "DELETE" })
+      setOneOffIncome(prev => prev.filter(i => i.id !== id))
+      fetchBalance(balanceMonth)
+    } catch { setError("Failed to delete one-off income entry") }
+  }
+
   return ( 
     <div className = "container">
       <ParticleBackground />
@@ -298,93 +390,31 @@ const recentExpenses = expenses.filter( expense =>
         <img src={cornerTL} alt="Corner TL" className="corner-tl" />
         <img src={cornerBR} alt="Corner BR" className="corner-br" />
 
-      
+        <BalanceBar
+          balance={balance}
+          balanceMonth={balanceMonth}
+          onMonthChange={(month) => { setBalanceMonth(month); fetchBalance(month) }}
+          onClearMonth={() => { setBalanceMonth(""); fetchBalance("") }}
+        />
 
-        <div className = "form-container">
-          <h2> Search: </h2>
-          <div className = "filter-container">
-            <div className = "date-filter">
-              <span className = "filterLabel"> From; </span>
-              <input
-                className = "form-input"
-                type = "date"
-                value = {filterDateA}
-                onChange = {(e) => setFilterDateA(e.target.value)}
-                />
-            </div>
-
-            <span className="date-separator"> ✦ </span>
-
-            <div className = "date-filter">
-              <span className = "filterLabel"> To; </span>
-              <input 
-                className = "form-input"
-                type = "date"
-                value = {filterDateB}
-                onChange = {(e) => setFilterDateB(e.target.value)}
-                />
-            </div>
-            <input
-              className = "form-input"
-              type = "text"
-              placeholder = "Search description..."
-              value = {filterDesc}
-              onChange = {(e) => setFilterDesc(e.target.value)}
-              />
-            <select className = "form-select"
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              >
-              <option value="">All Categories</option>
-              <option value="Food and Dining">Food and Dining</option>
-              <option value="Travel">Travel</option>
-              <option value="Utilities">Utilities</option>
-              <option value="Entertainment">Entertainment</option>
-              <option value="Upgrades">Upgrades</option>
-              <option value="Health and Fitness">Health and Fitness</option>
-              <option value="Education">Education</option>
-              <option value="Shopping">Shopping</option>
-              <option value="Groceries">Groceries</option>
-              <option value="Miscellaneous">Miscellaneous</option>
-            </select>
-
-            <button className = "btn-add" onClick={() => {setFilterCategory(""); setFilterDesc(""); setFilterDateA(""); setFilterDateB("")}}>Clear</button>
-          </div>
-          <h2> Add Expense</h2>  
-          <div className = "form-fields">
-            <select className = "form-select" value={category} onChange={(e) => setCategory(e.target.value)}>
-              <option value="">Select a category</option>
-              <option value="Food and Dining">Food and Dining</option>
-              <option value="Travel">Travel</option>
-              <option value="Utilities">Utilities</option>
-              <option value="Entertainment">Entertainment</option>
-              <option value="Upgrades">Upgrades</option>
-              <option value="Health and Fitness">Health and Fitness</option>
-              <option value="Education">Education</option>
-              <option value="Shopping">Shopping</option>
-              <option value="Groceries">Groceries</option>
-              <option value="Miscellaneous">Miscellaneous</option>
-            </select>
-
-            <input 
-              className = "form-input"
-              type = "number"
-              placeholder = "Amount"
-              value = {amount}
-              onChange = {(e) => setAmount(e.target.value)}
-            />
-
-            <input 
-              className = "form-input"
-              type = "text"
-              placeholder = "Description"
-              value = {description}
-              onChange = {(e) => setDescription(e.target.value)}
-            />
-
-            <button className = "btn-add" onClick={handleSubmit}>Add</button>
-          </div>
-      </div>
+        <ExpenseForm
+          category={category} setCategory={setCategory}
+          amount={amount} setAmount={setAmount}
+          description={description} setDescription={setDescription}
+          filterCategory={filterCategory} setFilterCategory={setFilterCategory}
+          filterDesc={filterDesc} setFilterDesc={setFilterDesc}
+          filterDateA={filterDateA} setFilterDateA={setFilterDateA}
+          filterDateB={filterDateB} setFilterDateB={setFilterDateB}
+          onSubmit={handleSubmit}
+          onClearFilters={() => { setFilterCategory(""); setFilterDesc(""); setFilterDateA(""); setFilterDateB("") }}
+          incomeAmount={incomeAmount} setIncomeAmount={setIncomeAmount}
+          incomeSource={incomeSource} setIncomeSource={setIncomeSource}
+          incomeNotes={incomeNotes} setIncomeNotes={setIncomeNotes}
+          oneOffAmount={oneOffAmount} setOneOffAmount={setOneOffAmount}
+          oneOffDescription={oneOffDescription} setOneOffDescription={setOneOffDescription}
+          onAddIncome={handleAddIncome}
+          onAddOneOff={handleAddOneOff}
+        />
 
 
       <button className = "toggle-btn" onClick={() => setShowSummary(!showSummary)}>
@@ -398,176 +428,40 @@ const recentExpenses = expenses.filter( expense =>
       { error && <p className = "error-message">{error}</p> }
 
       {showSummary ? (
-        <div className="view-container" key="summary">
-          <div className="summary-container">
-            <h2> Summary </h2>
-
-            {Object.entries(summary).map(([category, total]) => {
-             const budget = budgets[category]
-             const percentage = budget ? Math.round((total / budget) * 100) : null
-             const barColor = percentage >= 100 ? "#c0392b" : percentage >=75 ? "#e67e22" : "#4a3f6b"
-
-             return (
-              <div key={category} className="summary-row">
-                <div className="summary-row-info">
-                  <span>{category}</span>
-                  <div className="budget-input-row">
-                  <span>{total} Geo {budget ? ` / ${budget} Geo` : ""}</span>
-                
-                  <input 
-                    className="budget-input"
-                    type="number"
-                    placeholder="Limit"
-                    value={budgetInputs[category] || ""}
-                    onChange={(e) => setBudgetInputs({...budgetInputs, [category]: e.target.value})}
-                  />
-                  <button className="btn-add" onClick={() => handleSetBudget(category, budgetInputs[category])}>✓</button>
-                  
-                    <button className="btn-delete" onClick={() => handleRemoveBudget(category)}
-                    disabled = {!budgets[category]}
-                    style={{ opacity: budgets[category] ?1: 0.2, cursor: budgets[category] ? "pointer" : "default"}}>✕</button>
-                  
-                </div>
-              </div>
-                {percentage !== null && (
-                  <div className = "progress-bar-container">
-                    <div className = "progress-bar" style={{ width: `${Math.min(percentage, 100)}%`, backgroundColor: barColor }}></div>
-                  </div>
-                )}
-              </div>
-             )
-            })}
-
-
-            <div className="summary-row summary-total">
-              <span>Total</span>
-              <span>{Object.values(summary).reduce((total, amount) => total + amount, 0)} Geo</span>
-            </div>
-            <div className="chart-container">
-              <h2> Spending Breakdown</h2>
-              <ResponsiveContainer width="100%" height={400}>
-                <PieChart>
-                  <Pie
-                    data={Object.entries(summary).map(([category, total]) => ({ name: category, value: total }))}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={120}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine = {{ stroke: "#9b8fc4"}}
-                    style = {{ fontSize: "23px", fontFamily: "Cinzel, serif"}}
-                  >
-                    {Object.entries(summary).map(([category], index) => (
-                      <Cell
-                        key={category}
-                        fill={["#7c6fa0", "#9b8fc4", "#b8aed4", "#6b5a9e", "#c4b8e0", "#4a3f6b"][index % 6]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ backgroundColor: "#111128", border: "1px solid #4a3f6b", fontFamily: "Cinzel" }}
-                    formatter={(value) => [`${value} Geo`, "Amount"]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className = "chart-container">
-              <h2>Spending Trends — {sevenDaysAgo.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit' })} to {new Date().toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit' })}</h2>
-              <ResponsiveContainer width = "100%" height={300}>
-                <LineChart data = {trendData} margin={{top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray = "3 3" stroke="#4a3f6b" />
-                  <XAxis 
-                    dataKey = "date"
-                    tick={{ fill: "#D4C9A8", fontFamily: "Cinzel", fontSize: 17}}
-                  />
-                  <YAxis
-                    tick={{ fill: "#D4C9A8", fontFamily: "Cinzel", fontSize: 18}}
-                  />
-                  <Tooltip
-                    contentStyle={{backgroundColor: "#111128", border: "1px solid #4a3f6b", fontFamily: "Cinzel" }}
-                    labelStyle={{color: "#9b8fc4"}}
-                    itemStyle={{color: "d4c9a8"}}
-                    formater = {(value) => [`${value} Geo`, "Spent"]}
-                  />
-
-                  <Line
-                    type="monotone"
-                    dataKey = "total"
-                    stroke = "#D4C9A8"
-                    strokeWidth={2}
-                    dot = {{ fill:"9b8f4c", r: 4}}
-                    activeDot={{ fill: "#D4C9A8", r: 6}}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-
-                
-
-          </div>
-        </div>
-        ) : (
+        <SummaryView
+          summary={summary}
+          budgets={budgets}
+          budgetInputs={budgetInputs}
+          setBudgetInputs={setBudgetInputs}
+          trendData={trendData}
+          sevenDaysAgo={sevenDaysAgo}
+          onSetBudget={handleSetBudget}
+          onRemoveBudget={handleRemoveBudget}
+        />
+) : (
           loading ? (
             <p className = 'loading-message'>Loading expenses...</p>
           ) : (
           
         <div className="view-container" key = "table">
-          <table className="expense-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Category</th>
-                <th> Amount</th>
-                <th> Description</th>
-                <th> Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredExpenses.map(expense => (
-                <tr key ={expense.id}>
-                  {editingId == expense.id ? (
-                    <>
-                      <td> {expense.date}</td>
-                      <td>
-                        <select className = "form-select" value={editCategory} onChange={(e) => setEditCategory(e.target.value)}>
-                            <option value="Food and Dining">Food and Dining</option>
-                            <option value="Travel">Travel</option>
-                            <option value="Utilities">Utilities</option>
-                            <option value="Entertainment">Entertainment</option>
-                            <option value="Upgrades">Upgrades</option>
-                            <option value="Health and Fitness">Health and Fitness</option>
-                            <option value="Education">Education</option>
-                            <option value="Shopping">Shopping</option>
-                            <option value="Groceries">Groceries</option>
-                            <option value="Miscellaneous">Miscellaneous</option>
-                        </select>
-                        </td>
-                      <td><input className = "form-input" type = "number" value={editAmount} onChange={(e) => setEditAmount(e.target.value)}></input></td>
-                      <td> <input className = "form-input" type = "text" value={editDescription} onChange={(e) => setEditDescription(e.target.value)}></input></td>
-                      <td>
-                        <button className = "btn-add" onClick={() => handleSave(expense.id)}>Save</button>
-                        <button className = "btn-delete" onClick={() => setEditingId(null)}>Cancel</button>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td> {expense.date}</td>
-                      <td> {expense.category}</td>
-                      <td> {expense.amount} Geo</td>
-                      <td> {expense.description}</td>
-                      <td>
-                        <button className = "btn-add" onClick={() => handleEdit(expense)}>Edit</button>
-                        <button className = "btn-delete" onClick={() => handleDelete(expense.id)}>Delete</button>
-                      </td>
-                    </>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ExpenseTable
+            filteredExpenses={filteredExpenses}
+            income={income}
+            oneOffIncome={oneOffIncome}
+            editingId={editingId}
+            editCategory={editCategory}
+            editAmount={editAmount}
+            editDescription={editDescription}
+            setEditCategory={setEditCategory}
+            setEditAmount={setEditAmount}
+            setEditDescription={setEditDescription}
+            onEdit={handleEdit}
+            onSave={handleSave}
+            onDelete={handleDelete}
+            onCancelEdit={() => setEditingId(null)}
+            onDeleteIncome={handleDeleteIncome}
+            onDeleteOneOff={handleDeleteOneOff}
+          />
         </div>
           )
         )}

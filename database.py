@@ -24,6 +24,23 @@ class Budget(Base):
     category = Column(String, primary_key=True)
     amount = Column(Float)
 
+class Income(Base):
+    __tablename__ = "income"
+    id = Column(String, primary_key=True)
+    amount = Column(Float)
+    source = Column(String)
+    date = Column(String)
+    notes = Column(String, nullable=True)
+
+class OneOffIncome(Base):
+    __tablename__= "one_off_income"
+    id = Column(String, primary_key=True)
+    amount = Column(Float)
+    description = Column(String)
+    date = Column(String)
+    
+
+
 def init_db():
     Base.metadata.create_all(bind= engine)
 
