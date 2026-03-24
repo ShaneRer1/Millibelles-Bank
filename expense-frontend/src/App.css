@@ -349,3 +349,60 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   box-sizing: border-box;
   text-align: center;
 }
+
+@media (max-width: 768px) {
+  .banker-img {
+    width: 200px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    margin-left: -80px;
+  }
+
+.filter-container {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.form-fields {
+  flex-wrap: wrap;
+}
+
+.form-input {
+  min-width: 0;
+}
+
+.container {
+  max-width: 100%;
+  padding: 15px;
+}
+
+.form-container {
+  padding: 15px;
+}
+
+.corner-tl {
+  width: 250px;
+  top: -50px;
+  left: -55px;
+}
+
+.corner-br {
+  width: 150px;
+  bottom: -30px;
+  right: -30px;
+}
+
+.expense-table th, .expense-table td {
+  padding: 8px 6px;
+  font-size: 0.75rem;
+}
+
+td > .btn-add, td > .btn-delete {
+  display: block;
+  margin-bottom: 4px;
+  width: 100%;
+}
+}

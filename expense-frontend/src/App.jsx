@@ -219,6 +219,23 @@ const recentExpenses = expenses.filter( expense =>
   )
 
 
+  function exportToCSV() {
+    const headers = ["Date", "Category", "Amount", "Description"]
+    const rows = expenses.map( e=> [e.date, e.category, e.amount, e.description])
+
+    const csvContent = [headers,...rows]
+      .map( row => row.join(","))
+      .join("\n")
+
+    const blob = new Blob([csvContent], {type: "text/csv"})
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "millebelles_ledger.csv"
+    link.click()
+    URL.revokeObjectURL(url)
+
+  }
 
 
   async function fetchBudgets() {
@@ -372,6 +389,10 @@ const recentExpenses = expenses.filter( expense =>
 
       <button className = "toggle-btn" onClick={() => setShowSummary(!showSummary)}>
         {showSummary ? "◀ View Expenses" : "View Summary ▶"}
+      </button>
+
+      <button className="toggle-btn" onClick={exportToCSV}>
+        Export CSV ↓
       </button>
 
       { error && <p className = "error-message">{error}</p> }
