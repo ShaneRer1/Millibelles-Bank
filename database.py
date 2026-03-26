@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, String, Float
+from sqlalchemy import create_engine, Column, String, Float, Boolean
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 DATABASE_URL = "sqlite:///./expenses.db"
@@ -38,6 +38,17 @@ class OneOffIncome(Base):
     amount = Column(Float)
     description = Column(String)
     date = Column(String)
+
+class RecurringExpense(Base):
+    __tablename__= "recurring_expenses"
+    id = Column(String, primary_key=True)
+    amount = Column(Float)
+    category = Column(String)
+    description = Column(String)
+    frequency = Column(String)
+    last_run = Column(String)
+    active = Column(Boolean)
+
     
 
 

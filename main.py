@@ -5,13 +5,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from datetime import datetime
 import uuid
-from database import get_db, init_db, Expense as ExpenseModel, Budget as BudgetModel, Income as IncomeModel, OneOffIncome as OneOffIncomeModel
+from database import get_db, init_db, Expense as ExpenseModel, Budget as BudgetModel, Income as IncomeModel, OneOffIncome as OneOffIncomeModel, RecurringExpense as RecurringModel
 from sqlalchemy.orm import Session
+from typing import Literal
+from scheduler import start_scheduler 
 
 app = FastAPI()
 @app.on_event("startup")
 def startup():
     init_db()
+    start_scheduler()
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,6 +40,13 @@ class IncomeEntry(BaseModel):
 class OneOffIncomeEntry(BaseModel):
     amount: float = Field(gt=0, description="Amount must be positive")
     description: str
+
+class RecurringExpense(BaseModel):
+    category: str
+    amount: float = Field(gt=0, description="Amount must be positive")
+    description: str
+    frequency: Literal["weekly", "monthly", "yearly"]
+
 
 
 #GET all expenses
@@ -223,3 +233,58 @@ def get_balance(month: str = None, db: Session = Depends(get_db)):
         "total_expenses":total_expenses,
         "net_balance" : net_balance
     }
+
+
+#RECURRING EXPENSES-------------------------------------------------------------------------
+
+#GET a recurring expense
+@app.get("/recurring_expenses")
+def get_subscriptions(db: Session = Depends(get_db)):
+    subscriptions = db.query(RecurringModel).all()
+    return subscriptions
+
+#POST a recurring expense
+@app.post("/recurring_expenses")
+def add_subscription( subscription : RecurringExpense, db: Session = Depends(get_db)):
+    new_subscription = RecurringModel(
+        id = str(uuid.uuid4()),
+        last_run = datetime.now().strftime("%Y-%m-%d"),
+        active = True,
+        category = subscription.category,
+        amount = subscription.amount,
+        description = subscription.description,
+        frequency = subscription.frequency
+
+    )
+    db.add(new_subscription)
+    db.commit()
+    db.refresh(new_subscription)
+    return { "message": "Subscription added successfully", "Sub":new_subscription}
+
+
+#DELETE a subscription
+@app.delete("/recurring_expenses/{subscription_id}")
+def delete_subscription(subscription_id: str, db: Session = Depends(get_db)):
+    subscription = db.query(RecurringModel).filter(RecurringModel.id == subscription_id).first()
+    if not subscription:
+        raise HTTPException(status_code = 404, detail="Subscription not found")
+    db.delete(subscription)
+    db.commit()
+    return{ "message": f"Subscription with id {subscription_id} deleted successfully"}
+
+
+#PUT edit Subscriptions
+@app.put("/recurring_expenses/{subscription_id}")
+def edit_subscription(subscription_id: str, subscription: RecurringExpense, db: Session = Depends(get_db)):
+    sub_to_edit = db.query(RecurringModel).filter(RecurringModel.id == subscription_id).first()
+    if not sub_to_edit:
+        raise HTTPException(status_code = 404, detail="Subscription not found")
+    sub_to_edit.category = subscription.category
+    sub_to_edit.amount = subscription.amount
+    sub_to_edit.description = subscription.description
+    sub_to_edit.frequency = subscription.frequency
+    db.commit()
+    db.refresh(sub_to_edit)
+    return{"message": "Subscription updated Succesfully", "Subscription": sub_to_edit}
+
+    
