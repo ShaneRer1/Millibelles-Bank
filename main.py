@@ -259,7 +259,7 @@ def add_subscription( subscription : RecurringExpense, db: Session = Depends(get
     db.add(new_subscription)
     db.commit()
     db.refresh(new_subscription)
-    return { "message": "Subscription added successfully", "Sub":new_subscription}
+    return { "message": "Subscription added successfully", "sub":new_subscription}
 
 
 #DELETE a subscription
@@ -285,6 +285,15 @@ def edit_subscription(subscription_id: str, subscription: RecurringExpense, db: 
     sub_to_edit.frequency = subscription.frequency
     db.commit()
     db.refresh(sub_to_edit)
-    return{"message": "Subscription updated Succesfully", "Subscription": sub_to_edit}
+    return{"message": "Subscription updated Succesfully", "subscription": sub_to_edit}
 
-    
+ # PATCH edit active status   
+@app.patch("/recurring_expenses/{subscription_id}/toggle")
+def toggle_subscription(subscription_id: str, db: Session = Depends(get_db)):
+    sub = db.query(RecurringModel).filter(RecurringModel.id == subscription_id).first()
+    if not sub:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    sub.active = not sub.active
+    db.commit()
+    db.refresh(sub)
+    return {"message": "Subscription toggled", "subscription": sub}

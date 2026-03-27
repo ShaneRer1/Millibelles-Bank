@@ -16,7 +16,7 @@ function SummaryView({ summary, budgets, budgetInputs, setBudgetInputs, trendDat
               <div className="summary-row-info">
                 <span>{category}</span>
                 <div className="budget-input-row">
-                  <span>{total} Geo {budget ? ` / ${budget} Geo` : ""}</span>
+                  <span>{total.toFixed(2)} Geo {budget ? ` / ${budget} Geo` : ""}</span>
                   <input
                     className="budget-input"
                     type="number"

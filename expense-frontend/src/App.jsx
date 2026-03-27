@@ -8,6 +8,7 @@ import SummaryView from "./components/SummaryView"
 import ExpenseTable from "./components/ExpenseTable"
 import ExpenseForm from "./components/ExpenseForm"
 import BalanceBar from "./components/BalanceBar"
+import SubscriptionsView from "./components/SubscriptionsView"
 
 function App() {
   const [expenses, setExpenses] = useState([])
@@ -16,7 +17,7 @@ function App() {
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
 
-  const[showSummary, setShowSummary] = useState(false)
+  const [showView, setShowView] = useState("expenses")
   const [summary, setSummary] = useState({})
 
   const [editingId, setEditingId] = useState(null)
@@ -47,6 +48,16 @@ function App() {
   const [oneOffAmount, setOneOffAmount] = useState("")
   const [oneOffDescription, setOneOffDescription] = useState("")
 
+  const [subscriptions, setSubscriptions] = useState("")
+  const [subCategory, setSubCategory] = useState("")
+  const [subAmount, setSubAmount] = useState("")
+  const [subDescription, setSubDescription] = useState("")
+  const [subFrequency, setSubFrequency] = useState("")
+  const [editingSubId, setEditingSubId] = useState(null)
+  const [editSubCategory, setEditSubCategory] = useState("")
+  const [editSubAmount, setEditSubAmount] = useState("")
+  const [editSubDescription, setEditSubDescription] = useState("")
+  const [editSubFrequency, setEditSubFrequency] = useState("")
 
   async function handleSubmit() {
 
@@ -129,6 +140,7 @@ function App() {
     fetchBudgets()
     fetchIncome()
     fetchBalance("")
+    fetchSubscriptions()
 
   }, [])
 
@@ -175,7 +187,7 @@ function App() {
       const response = await fetch(`http://localhost:8000/expenses/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category: editCategory, amount: parseFloat(editAmount), description: editDescription })
+        body: JSON.stringify({ category: editCategory, amount: parseFloat(editAmount), description: editSubDescription })
     })
 
     if (!response.ok) throw new Error("")
@@ -374,7 +386,144 @@ const recentExpenses = expenses.filter( expense =>
     } catch { setError("Failed to delete one-off income entry") }
   }
 
-  return ( 
+  async function fetchSubscriptions(){
+    try{
+      const response = await fetch("http://localhost:8000/recurring_expenses")
+      if (!response.ok) throw new Error("failed to fetch subscriptions")
+      const subs = await response.json()
+    setSubscriptions(subs)
+    }
+    catch (error) {
+      setError("Failed to connect to Back end, is the Server Running?")
+       } 
+    }
+ 
+  async function handleAddSubscription() {
+    if (!subCategory) {
+      setError("Please select a category")
+      return
+    }
+    if (!subAmount || parseFloat(subAmount) <= 0) {
+      setError("Please enter a valid amount")
+      return
+    }
+    if (!subDescription.trim()) {
+      setError("Please enter a description")
+      return
+    }
+    if(!subFrequency) {
+      setError("Please select a freqeuncy")
+      return
+    }
+    setError("")
+
+    try {
+      const response = await fetch("http://localhost:8000/recurring_expenses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ 
+          category: subCategory, 
+          amount: parseFloat(subAmount), 
+          description: subDescription, 
+          frequency: subFrequency 
+        })
+      })
+      if (!response.ok) throw new Error("")
+      const data = await response.json()
+      setSubscriptions([data.sub, ...subscriptions])
+      setSubCategory("")
+      setSubAmount("")
+      setSubDescription("")
+      setSubFrequency("")
+  } catch (error) {
+        setError("Failed to connect to Back end, is the Server Running?")
+        return
+  }}
+  
+  async function handleDeleteSubscription(id) {
+    try{
+      const response = await fetch(`http://localhost:8000/recurring_expenses/${id}`, {
+      method: "DELETE"
+    })
+      if (!response.ok) throw new Error("failed to fetch subscriptions")
+      setSubscriptions(subscriptions.filter(subs => subs.id !== id))
+    } catch (error) {
+          setError("Failed to connect to Back end, is the Server Running?")
+          return
+
+    }}  
+
+  async function handleEditSubscription(id) {
+    if (!editSubCategory) {
+      setError("Please select a category")
+      return
+    }
+    if (!editSubAmount || parseFloat(editSubAmount) <= 0) {
+      setError("Please enter a valid amount")
+      return
+    }
+    if (!editSubDescription.trim()) {
+      setError("Please enter a description")
+      return
+    }
+    if(!editSubFrequency) {
+      setError("Please select a freqeuncy")
+      return
+    }
+    setError("")
+
+    try {
+      const response = await fetch(`http://localhost:8000/recurring_expenses/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({ 
+          category: editSubCategory, 
+          amount: parseFloat(editSubAmount), 
+          description: editSubDescription, 
+          frequency: editSubFrequency 
+        })
+      })
+      if (!response.ok) throw new Error("")
+      const data = await response.json()
+      setSubscriptions(subscriptions.map(subs => subs.id === id ? data.subscription: subs))
+      setEditSubCategory("")
+      setEditSubAmount("")
+      setEditSubDescription("")
+      setEditSubFrequency("") 
+      setEditingSubId(null)
+    }catch (error) {
+      setError("Failed to connect to Back end, is the Server Running?")
+      return
+    }
+
+  }
+
+  async function handleEditSub(subscription) {
+  setEditingSubId(subscription.id)
+  setEditSubCategory(subscription.category)
+  setEditSubAmount(subscription.amount)
+  setEditSubDescription(subscription.description)
+  setEditSubFrequency(subscription.frequency)
+}
+  async function handleToggleActive(id, currentActive) {
+  try {
+    const response = await fetch(`http://localhost:8000/recurring_expenses/${id}/toggle`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: !currentActive })
+    })
+    if (!response.ok) throw new Error("")
+    const data = await response.json()
+    setSubscriptions(subscriptions.map(sub => sub.id === id ? data.subscription : sub))
+  } catch {
+    setError("Failed to toggle subscription")
+  }
+}   
+  
+  
+
+
+return ( 
     <div className = "container">
       <ParticleBackground />
       
@@ -417,17 +566,16 @@ const recentExpenses = expenses.filter( expense =>
         />
 
 
-      <button className = "toggle-btn" onClick={() => setShowSummary(!showSummary)}>
-        {showSummary ? "◀ View Expenses" : "View Summary ▶"}
-      </button>
-
-      <button className="toggle-btn" onClick={exportToCSV}>
-        Export CSV ↓
-      </button>
+      <div className="view-toggle-group">
+        <button className={`toggle-btn ${showView === "expenses" ? "toggle-active" : ""}`} onClick={() => setShowView("expenses")}>Ledger</button>
+        <button className={`toggle-btn ${showView === "summary" ? "toggle-active" : ""}`} onClick={() => setShowView("summary")}>Summary</button>
+        <button className={`toggle-btn ${showView === "subscriptions" ? "toggle-active" : ""}`} onClick={() => setShowView("subscriptions")}>Subscriptions</button>
+        {showView === "expenses" && <button className="toggle-btn" onClick={exportToCSV}>Export CSV ↓</button>}
+      </div>
 
       { error && <p className = "error-message">{error}</p> }
 
-      {showSummary ? (
+      {showView === "summary" ? (
         <SummaryView
           summary={summary}
           budgets={budgets}
@@ -438,6 +586,25 @@ const recentExpenses = expenses.filter( expense =>
           onSetBudget={handleSetBudget}
           onRemoveBudget={handleRemoveBudget}
         />
+) : showView === "subscriptions" ? (
+  <SubscriptionsView
+    subscriptions={subscriptions}
+    subCategory={subCategory} setSubCategory={setSubCategory}
+    subAmount={subAmount} setSubAmount={setSubAmount}
+    subDescription={subDescription} setSubDescription={setSubDescription}
+    subFrequency={subFrequency} setSubFrequency={setSubFrequency}
+    editingSubId={editingSubId}
+    editSubCategory={editSubCategory} setEditSubCategory={setEditSubCategory}
+    editSubAmount={editSubAmount} setEditSubAmount={setEditSubAmount}
+    editSubDescription={editSubDescription} setEditSubDescription={setEditSubDescription}
+    editSubFrequency={editSubFrequency} setEditSubFrequency={setEditSubFrequency}
+    onAdd={handleAddSubscription}
+    onDelete={handleDeleteSubscription}
+    onEdit={handleEditSub}
+    onSave={handleEditSubscription}
+    onToggleActive={handleToggleActive}
+    onCancelEdit={() => setEditingSubId(null)}
+  />
 ) : (
           loading ? (
             <p className = 'loading-message'>Loading expenses...</p>
@@ -446,8 +613,8 @@ const recentExpenses = expenses.filter( expense =>
         <div className="view-container" key = "table">
           <ExpenseTable
             filteredExpenses={filteredExpenses}
-            income={income}
-            oneOffIncome={oneOffIncome}
+            income={filterCategory ? [] :income }
+            oneOffIncome={filterCategory ? [] :oneOffIncome}
             editingId={editingId}
             editCategory={editCategory}
             editAmount={editAmount}

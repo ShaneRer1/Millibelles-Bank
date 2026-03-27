@@ -512,3 +512,48 @@ td > .btn-add, td > .btn-delete {
 .balance-month-picker .toggle-btn {
   margin-bottom: 0;
 }
+
+.view-toggle-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.view-toggle-group .toggle-btn {
+  margin-bottom: 0;
+  min-width: 180px;
+  text-align: center;
+}
+
+.row-inactive td {
+  opacity: 0.4;
+}
+
+.btn-active {
+  padding: 6px 12px;
+  background-color: transparent;
+  color: #6dbf8f;
+  border: 1px solid #6dbf8f;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.btn-inactive {
+  padding: 6px 12px;
+  background-color: transparent;
+  color: #9b8fc4;
+  border: 1px solid #4a3f6b;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.subscriptions-action-cell {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}

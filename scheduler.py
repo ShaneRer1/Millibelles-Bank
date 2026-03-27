@@ -34,5 +34,5 @@ def check_recurring_expenses():
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(check_recurring_expenses, "interval", days=1)
+    scheduler.add_job(check_recurring_expenses, "cron", hour = 0, minute=0, misfire_grace_time=3600)
     scheduler.start()
