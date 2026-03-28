@@ -7,8 +7,9 @@ from datetime import datetime
 import uuid
 from database import get_db, init_db, Expense as ExpenseModel, Budget as BudgetModel, Income as IncomeModel, OneOffIncome as OneOffIncomeModel, RecurringExpense as RecurringModel
 from sqlalchemy.orm import Session
-from typing import Literal
+from typing import Literal, Optional
 from scheduler import start_scheduler 
+
 
 app = FastAPI()
 @app.on_event("startup")
@@ -46,7 +47,7 @@ class RecurringExpense(BaseModel):
     amount: float = Field(gt=0, description="Amount must be positive")
     description: str
     frequency: Literal["weekly", "monthly", "yearly"]
-
+    last_run: Optional[str] = None
 
 
 #GET all expenses
@@ -248,7 +249,7 @@ def get_subscriptions(db: Session = Depends(get_db)):
 def add_subscription( subscription : RecurringExpense, db: Session = Depends(get_db)):
     new_subscription = RecurringModel(
         id = str(uuid.uuid4()),
-        last_run = datetime.now().strftime("%Y-%m-%d"),
+        last_run = subscription.last_run if subscription.last_run else datetime.now().strftime("%Y-%m-%d"),
         active = True,
         category = subscription.category,
         amount = subscription.amount,
@@ -283,6 +284,8 @@ def edit_subscription(subscription_id: str, subscription: RecurringExpense, db: 
     sub_to_edit.amount = subscription.amount
     sub_to_edit.description = subscription.description
     sub_to_edit.frequency = subscription.frequency
+    if subscription.last_run:
+        sub_to_edit.last_run = subscription.last_run
     db.commit()
     db.refresh(sub_to_edit)
     return{"message": "Subscription updated Succesfully", "subscription": sub_to_edit}

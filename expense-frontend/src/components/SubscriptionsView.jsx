@@ -4,11 +4,13 @@ function SubscriptionsView({
   subAmount, setSubAmount,
   subDescription, setSubDescription,
   subFrequency, setSubFrequency,
+  subLastRun, setSubLastRun,
   editingSubId,
   editSubCategory, setEditSubCategory,
   editSubAmount, setEditSubAmount,
   editSubDescription, setEditSubDescription,
   editSubFrequency, setEditSubFrequency,
+  editSubLastrun, setEditSubLastrun,
   onAdd, onDelete, onEdit, onSave, onToggleActive, onCancelEdit
 }) {
 
@@ -49,6 +51,9 @@ function SubscriptionsView({
             <option value="monthly">Monthly</option>
             <option value="yearly">Yearly</option>
           </select>
+          
+          <input className="form-input" type="date" placeholder="Last paid date" value={subLastRun} onChange={e => setSubLastRun(e.target.value)}/>
+          
           <button className="btn-add" onClick={onAdd}>Add</button>
         </div>
       </div>
@@ -61,13 +66,15 @@ function SubscriptionsView({
             <th>Category</th>
             <th>Amount</th>
             <th>Frequency</th>
-            <th>Next Run</th>
+            <th>Last paid</th>
             <th>Status</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          {subscriptions.map(sub => (
+          {[...subscriptions]
+            .sort((a, b) => new Date(b.last_run) - new Date(a.last_run))
+            .map(sub => ( 
             <tr key={sub.id} className={sub.active ? "row-expense" : "row-inactive"}>
               {editingSubId === sub.id ? (
                 <>
@@ -94,7 +101,7 @@ function SubscriptionsView({
                       <option value="yearly">Yearly</option>
                     </select>
                   </td>
-                  <td>{sub.last_run}</td>
+                  <td><input className="form-input" type="date" value={editSubLastrun} onChange={e => setEditSubLastrun(e.target.value)} /></td>
                   <td>—</td>
                   <td>
                     <div className="subscriptions-action-cell">

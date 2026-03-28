@@ -58,6 +58,8 @@ function App() {
   const [editSubAmount, setEditSubAmount] = useState("")
   const [editSubDescription, setEditSubDescription] = useState("")
   const [editSubFrequency, setEditSubFrequency] = useState("")
+  const [editSubLastrun, setEditSubLastrun] = useState("")
+  const [subLastRun, setSubLastRun] = useState("")
 
   async function handleSubmit() {
 
@@ -421,11 +423,12 @@ const recentExpenses = expenses.filter( expense =>
       const response = await fetch("http://localhost:8000/recurring_expenses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ 
+          body: JSON.stringify({ 
           category: subCategory, 
           amount: parseFloat(subAmount), 
           description: subDescription, 
-          frequency: subFrequency 
+          frequency: subFrequency,
+          last_run: subLastRun || null
         })
       })
       if (!response.ok) throw new Error("")
@@ -470,6 +473,9 @@ const recentExpenses = expenses.filter( expense =>
       setError("Please select a freqeuncy")
       return
     }
+    if(!editSubLastrun) {
+      setError("Please select a start date")
+    }
     setError("")
 
     try {
@@ -480,7 +486,8 @@ const recentExpenses = expenses.filter( expense =>
           category: editSubCategory, 
           amount: parseFloat(editSubAmount), 
           description: editSubDescription, 
-          frequency: editSubFrequency 
+          frequency: editSubFrequency, 
+          last_run: editSubLastrun
         })
       })
       if (!response.ok) throw new Error("")
@@ -504,6 +511,7 @@ const recentExpenses = expenses.filter( expense =>
   setEditSubAmount(subscription.amount)
   setEditSubDescription(subscription.description)
   setEditSubFrequency(subscription.frequency)
+  setEditSubLastrun(subscription.last_run)
 }
   async function handleToggleActive(id, currentActive) {
   try {
@@ -593,11 +601,13 @@ return (
     subAmount={subAmount} setSubAmount={setSubAmount}
     subDescription={subDescription} setSubDescription={setSubDescription}
     subFrequency={subFrequency} setSubFrequency={setSubFrequency}
+    subLastRun={subLastRun} setSubLastRun={setSubLastRun}
     editingSubId={editingSubId}
     editSubCategory={editSubCategory} setEditSubCategory={setEditSubCategory}
     editSubAmount={editSubAmount} setEditSubAmount={setEditSubAmount}
     editSubDescription={editSubDescription} setEditSubDescription={setEditSubDescription}
     editSubFrequency={editSubFrequency} setEditSubFrequency={setEditSubFrequency}
+    editSubLastrun={editSubLastrun} setEditSubLastrun={setEditSubLastrun}
     onAdd={handleAddSubscription}
     onDelete={handleDeleteSubscription}
     onEdit={handleEditSub}
