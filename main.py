@@ -149,33 +149,6 @@ def delete_budget(category: str, db : Session = Depends(get_db)):
 def get_income(db: Session = Depends(get_db)):
     return db.query(IncomeModel).order_by(IncomeModel.date.desc()).all()
 
-#POST a new income entry
-@app.post("/income")
-def add_income(entry: IncomeEntry, db : Session = Depends(get_db)):
-    new_income = IncomeModel(
-        id = str(uuid.uuid4()),
-        amount = entry.amount,
-        source = entry.source,
-        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        notes = entry.notes
-    )
-    db.add(new_income)
-    db.commit()
-    db.refresh(new_income)
-    return {"message": "Income added successfully", "income": new_income}
-
-#DELETE an income entry
-@app.delete("/income/{income_id}")
-def delete_income( income_id: str, db: Session = Depends(get_db)):
-    entry = db.query(IncomeModel).filter(IncomeModel.id == income_id).first()
-    if not entry:
-        raise HTTPException(status_code=404, detail="Income entry not found")
-    db.delete(entry)
-    db.commit()
-    return {"message": f"Income entry {income_id} deleted successfully"}
-
-# ONE-OFF-INCOME----------------------------------------------------------------------
-
 #GET all OO Incomes
 @app.get("/income/one-off")
 def get_one_off_income( db: Session = Depends(get_db)):
@@ -196,6 +169,23 @@ def add_one_off_income(entry: OneOffIncomeEntry, db: Session = Depends(get_db)):
     db.refresh(new_entry)
     return {"message": "Income added successfully", "income": new_entry}
 
+
+#POST a new income entry
+@app.post("/income")
+def add_income(entry: IncomeEntry, db : Session = Depends(get_db)):
+    new_income = IncomeModel(
+        id = str(uuid.uuid4()),
+        amount = entry.amount,
+        source = entry.source,
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        notes = entry.notes
+    )
+    db.add(new_income)
+    db.commit()
+    db.refresh(new_income)
+    return {"message": "Income added successfully", "income": new_income}
+
+
 #DELETE a OO Income entry
 @app.delete("/income/one-off/{entry_id}")
 def delete_one_off_income( entry_id: str, db: Session = Depends(get_db)):
@@ -205,6 +195,48 @@ def delete_one_off_income( entry_id: str, db: Session = Depends(get_db)):
     db.delete(entry)
     db.commit()
     return {"message": f"Income entry {entry_id} deleted successfully"}
+
+#DELETE an income entry
+@app.delete("/income/{income_id}")
+def delete_income( income_id: str, db: Session = Depends(get_db)):
+    entry = db.query(IncomeModel).filter(IncomeModel.id == income_id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Income entry not found")
+    db.delete(entry)
+    db.commit()
+    return {"message": f"Income entry {income_id} deleted successfully"}
+
+
+#PUT edit a OO Income entry
+@app.put("/income/one-off/{entry_id}")
+def edit_one_off_income(entry_id: str, entry: OneOffIncomeEntry, db: Session = Depends(get_db)):
+    income_to_edit = db.query(OneOffIncomeModel).filter(OneOffIncomeModel.id == entry_id).first()
+    if not income_to_edit:
+        raise HTTPException(status_code=404, detail="One Off Income entry not found")
+    income_to_edit.amount = entry.amount
+    income_to_edit.description = entry.description
+    db.commit()
+    db.refresh(income_to_edit)
+    return {"message": "One Off Income entry updated successfully", "income": income_to_edit}
+
+#PUT edit an income entry
+@app.put("/income/{income_id}")
+def edit_income(income_id: str, entry: IncomeEntry, db: Session = Depends(get_db)):
+    income_to_edit = db.query(IncomeModel).filter(IncomeModel.id == income_id).first()
+    if not income_to_edit:
+        raise HTTPException(status_code=404, detail="Income entry not found")
+    income_to_edit.amount = entry.amount
+    income_to_edit.source = entry.source
+    income_to_edit.notes = entry.notes
+    db.commit()
+    db.refresh(income_to_edit)
+    return {"message": "Income entry updated successfully", "income": income_to_edit}
+
+
+
+
+
+
 
 
 #   BALANCE----------------------------------------------------------------------------------

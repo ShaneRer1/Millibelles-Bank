@@ -1,6 +1,6 @@
 import { PieChart, Pie, Tooltip, ResponsiveContainer, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts"
 
-function SummaryView({ summary, budgets, budgetInputs, setBudgetInputs, trendData, sevenDaysAgo, onSetBudget, onRemoveBudget }) {
+function SummaryView({ summary, budgets, budgetInputs, setBudgetInputs, trendData, sevenDaysAgo, onSetBudget, onRemoveBudget, selectedDay, setSelectedDay, selectedDaySummary }) {
   return (
     <div className="view-container" key="summary">
       <div className="summary-container">
@@ -48,11 +48,16 @@ function SummaryView({ summary, budgets, budgetInputs, setBudgetInputs, trendDat
         </div>
 
         <div className="chart-container">
-          <h2>Spending Breakdown</h2>
+          
+          <h2>
+            {selectedDay 
+              ? `Spending Breakdown — ${selectedDay} (click point again to reset)` 
+              : "Spending Breakdown"}
+          </h2>
           <ResponsiveContainer width="100%" height={400}>
             <PieChart>
               <Pie
-                data={Object.entries(summary).map(([category, total]) => ({ name: category, value: total }))}
+                data={Object.entries(selectedDaySummary || summary).map(([category, total]) => ({ name: category, value: total }))}
                 dataKey="value"
                 nameKey="name"
                 cx="50%"
@@ -80,7 +85,10 @@ function SummaryView({ summary, budgets, budgetInputs, setBudgetInputs, trendDat
         <div className="chart-container">
           <h2>Spending Trends — {sevenDaysAgo.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit' })} to {new Date().toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit' })}</h2>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <LineChart 
+              data={trendData} 
+              margin={{top: 10, right: 30, left: 0, bottom: 0}}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#4a3f6b" />
               <XAxis dataKey="date" tick={{ fill: "#D4C9A8", fontFamily: "Cinzel", fontSize: 17 }} />
               <YAxis tick={{ fill: "#D4C9A8", fontFamily: "Cinzel", fontSize: 18 }} />
@@ -95,8 +103,16 @@ function SummaryView({ summary, budgets, budgetInputs, setBudgetInputs, trendDat
                 dataKey="total"
                 stroke="#D4C9A8"
                 strokeWidth={2}
-                dot={{ fill: "9b8f4c", r: 4 }}
-                activeDot={{ fill: "#D4C9A8", r: 6 }}
+                dot={{ fill: "#9b8f4c", r: 6, cursor: "pointer" }}
+                activeDot={{ 
+                  fill: "#D4C9A8", 
+                  r: 8, 
+                  cursor: "pointer",
+                  onClick: (_, payload) => {
+                    const clickedDate = payload.payload.fullDate
+                    setSelectedDay(prev => prev === clickedDate ? null : clickedDate)
+                  }
+                }}
               />
             </LineChart>
           </ResponsiveContainer>

@@ -69,6 +69,7 @@ function ExpenseForm({
           <option value="Shopping">Shopping</option>
           <option value="Groceries">Groceries</option>
           <option value="Miscellaneous">Miscellaneous</option>
+          <option value="__income__">Income</option>
         </select>
 
         <button className="btn-add" onClick={onClearFilters}>Clear</button>

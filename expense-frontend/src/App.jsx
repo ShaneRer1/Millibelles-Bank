@@ -48,7 +48,7 @@ function App() {
   const [oneOffAmount, setOneOffAmount] = useState("")
   const [oneOffDescription, setOneOffDescription] = useState("")
 
-  const [subscriptions, setSubscriptions] = useState("")
+  const [subscriptions, setSubscriptions] = useState([])  
   const [subCategory, setSubCategory] = useState("")
   const [subAmount, setSubAmount] = useState("")
   const [subDescription, setSubDescription] = useState("")
@@ -60,6 +60,17 @@ function App() {
   const [editSubFrequency, setEditSubFrequency] = useState("")
   const [editSubLastrun, setEditSubLastrun] = useState("")
   const [subLastRun, setSubLastRun] = useState("")
+
+  const [editingIncomeId, setEditingIncomeId] = useState(null)
+  const [editIncomeAmount, setEditIncomeAmount] = useState("")
+  const [editIncomeSource, setEditIncomeSource] = useState("")
+  const [editIncomeNotes, setEditIncomeNotes] = useState("")
+
+  const [editingOneOffId, setEditingOneOffId] = useState(null)
+  const [editOneOffAmount, setEditOneOffAmount] = useState("")
+  const [editOneOffDescription, setEditOneOffDescription] = useState("")
+
+  const [selectedDay, setSelectedDay] = useState(null)
 
   async function handleSubmit() {
 
@@ -189,7 +200,7 @@ function App() {
       const response = await fetch(`http://localhost:8000/expenses/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category: editCategory, amount: parseFloat(editAmount), description: editSubDescription })
+        body: JSON.stringify({ category: editCategory, amount: parseFloat(editAmount), description: editDescription })
     })
 
     if (!response.ok) throw new Error("")
@@ -203,15 +214,14 @@ function App() {
     }
   }
 
-  const filteredExpenses = expenses.filter(expense => {
+  const filteredExpenses = filterCategory === "__income__" ? [] : expenses.filter(expense => {
     const matchesDate = 
       (filterDateA === "" || new Date(expense.date) >= new Date(filterDateA)) &&
       (filterDateB === "" || new Date(expense.date) <= new Date(filterDateB))
     const matchesDesc = expense.description.toLowerCase().includes(filterDesc.toLowerCase())
     const matchesCategory = filterCategory === "" || expense.category === filterCategory
-
     return matchesDate && matchesDesc && matchesCategory
-  })
+})
 
   const fillMissingDates = (data) => {
     if (data.length == 0) return data
@@ -222,13 +232,25 @@ function App() {
 
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split("T")[0]
-      filled.push({date: dateStr.slice(5), total: dateMap[dateStr] || 0})
-    }
+      filled.push({
+      date: dateStr.slice(5),   
+      fullDate: dateStr,         
+      total: dateMap[dateStr] || 0
+    })}
     return filled
   }
 
 const sevenDaysAgo = new Date ()
 sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7)
+
+const selectedDaySummary = selectedDay
+  ? expenses
+      .filter(e => e.date.startsWith(selectedDay))
+      .reduce((acc, e) => {
+        acc[e.category] = (acc[e.category] || 0) + e.amount
+        return acc
+      }, {})
+  : null
 
 const recentExpenses = expenses.filter( expense =>
   new Date(expense.date) >= sevenDaysAgo
@@ -243,8 +265,9 @@ const recentExpenses = expenses.filter( expense =>
       }, {})
     ).map(([date, total]) => ({ date, total}))
       .sort((a, b) => new Date(a.date) - new Date(b.date))
+      
   )
-
+  console.log(trendData)
 
   function exportToCSV() {
     const headers = ["Date", "Category", "Amount", "Description"]
@@ -400,6 +423,62 @@ const recentExpenses = expenses.filter( expense =>
        } 
     }
  
+  
+  async function handleEditIncome(id) {
+    const entry = income.find(i => i.id === id)
+    if (entry) {
+      setEditingIncomeId(id)
+      setEditIncomeAmount(entry.amount.toString())
+      setEditIncomeSource(entry.source)
+      setEditIncomeNotes(entry.notes)
+    }
+  }
+
+  function handleEditOneOff(id) {
+    const oneOff = oneOffIncome.find(i => i.id === id)
+    if (oneOff) {
+      setEditingOneOffId(id)
+      setEditOneOffAmount(oneOff.amount.toString())
+      setEditOneOffDescription(oneOff.description)
+    }
+  }
+
+  async function handleSaveIncome(id) {
+    if (!editIncomeAmount || parseFloat(editIncomeAmount) <= 0) { setError("Please enter a valid amount"); return }
+    if (!editIncomeSource.trim()) { setError("Please enter a source"); return }
+    setError("")
+    try {
+      const res = await fetch(`http://localhost:8000/income/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: parseFloat(editIncomeAmount), source: editIncomeSource, notes: editIncomeNotes })
+      })
+      if (!res.ok) throw new Error("")
+      const data = await res.json()
+      setIncome(income.map(i => i.id === id ? data.income : i))
+      setEditingIncomeId(null)
+      fetchBalance(balanceMonth)
+    } catch { setError("Failed to update income entry") }
+  }
+
+  async function handleSaveOneOff(id) {
+    if (!editOneOffAmount || parseFloat(editOneOffAmount) <= 0) { setError("Please enter a valid amount"); return }
+    if (!editOneOffDescription.trim()) { setError("Please enter a description"); return }
+    setError("")
+    try {
+      const res = await fetch(`http://localhost:8000/income/one-off/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: parseFloat(editOneOffAmount), description: editOneOffDescription })
+      })
+      if (!res.ok) throw new Error("")
+      const data = await res.json()
+      setOneOffIncome(oneOffIncome.map(i => i.id === id ? data.income : i))
+      setEditingOneOffId(null)
+      fetchBalance(balanceMonth)
+    } catch { setError("Failed to update one-off income entry") }
+  }
+
   async function handleAddSubscription() {
     if (!subCategory) {
       setError("Please select a category")
@@ -593,7 +672,11 @@ return (
           sevenDaysAgo={sevenDaysAgo}
           onSetBudget={handleSetBudget}
           onRemoveBudget={handleRemoveBudget}
+          selectedDay={selectedDay}
+          setSelectedDay={setSelectedDay}
+          selectedDaySummary={selectedDaySummary}
         />
+        
 ) : showView === "subscriptions" ? (
   <SubscriptionsView
     subscriptions={subscriptions}
@@ -623,8 +706,8 @@ return (
         <div className="view-container" key = "table">
           <ExpenseTable
             filteredExpenses={filteredExpenses}
-            income={filterCategory ? [] :income }
-            oneOffIncome={filterCategory ? [] :oneOffIncome}
+            income={filterCategory === "__income__" ? income : filterCategory ? [] : income}
+            oneOffIncome={filterCategory === "__income__" ? oneOffIncome : filterCategory ? [] : oneOffIncome}
             editingId={editingId}
             editCategory={editCategory}
             editAmount={editAmount}
@@ -638,6 +721,19 @@ return (
             onCancelEdit={() => setEditingId(null)}
             onDeleteIncome={handleDeleteIncome}
             onDeleteOneOff={handleDeleteOneOff}
+            editingIncomeId={editingIncomeId}
+            editIncomeAmount={editIncomeAmount} setEditIncomeAmount={setEditIncomeAmount}
+            editIncomeSource={editIncomeSource} setEditIncomeSource={setEditIncomeSource}
+            editIncomeNotes={editIncomeNotes} setEditIncomeNotes={setEditIncomeNotes}
+            editingOneOffId={editingOneOffId}
+            editOneOffAmount={editOneOffAmount} setEditOneOffAmount={setEditOneOffAmount}
+            editOneOffDescription={editOneOffDescription} setEditOneOffDescription={setEditOneOffDescription}
+            onEditIncome={handleEditIncome}
+            onSaveIncome={handleSaveIncome}
+            onEditOneOff={handleEditOneOff}
+            onSaveOneOff={handleSaveOneOff}
+            onCancelIncomeEdit={() => setEditingIncomeId(null)}
+            onCancelOneOffEdit={() => setEditingOneOffId(null)}
           />
         </div>
           )
