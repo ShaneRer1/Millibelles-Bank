@@ -11,142 +11,93 @@ import BalanceBar from "./components/BalanceBar"
 import SubscriptionsView from "./components/SubscriptionsView"
 
 function App() {
+  // Data
   const [expenses, setExpenses] = useState([])
-
-  const [category, setCategory] = useState("")
-  const [amount, setAmount] = useState("")
-  const [description, setDescription] = useState("")
-
-  const [showView, setShowView] = useState("expenses")
-  const [summary, setSummary] = useState({})
-
-  const [editingId, setEditingId] = useState(null)
-  const [editCategory, setEditCategory] = useState("")
-  const [editAmount, setEditAmount] = useState("")
-  const [editDescription, setEditDescription] = useState("")
-
-  const [error, setError] = useState("")
-  const [loading, setLoading] = useState(true)
-
-  const [filterCategory, setFilterCategory] = useState("")
-  const [filterDesc, setFilterDesc] = useState("")
-
-  const [filterDateA, setFilterDateA] = useState("")
-  const [filterDateB, setFilterDateB] = useState("")
-
-  const [budgets, setBudgets] = useState({})
-  const [budgetInputs, setBudgetInputs] = useState({})
-  
-
   const [income, setIncome] = useState([])
   const [oneOffIncome, setOneOffIncome] = useState([])
+  const [subscriptions, setSubscriptions] = useState([])
+  const [summary, setSummary] = useState({})
+  const [budgets, setBudgets] = useState({})
+  const [budgetInputs, setBudgetInputs] = useState({})
   const [balance, setBalance] = useState(null)
+
+  // UI
+  const [showView, setShowView] = useState("expenses")
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(true)
   const [balanceMonth, setBalanceMonth] = useState("")
-  const [incomeAmount, setIncomeAmount] = useState("")
-  const [incomeSource, setIncomeSource] = useState("")
-  const [incomeNotes, setIncomeNotes] = useState("")
-  const [oneOffAmount, setOneOffAmount] = useState("")
-  const [oneOffDescription, setOneOffDescription] = useState("")
-
-  const [subscriptions, setSubscriptions] = useState([])  
-  const [subCategory, setSubCategory] = useState("")
-  const [subAmount, setSubAmount] = useState("")
-  const [subDescription, setSubDescription] = useState("")
-  const [subFrequency, setSubFrequency] = useState("")
-  const [editingSubId, setEditingSubId] = useState(null)
-  const [editSubCategory, setEditSubCategory] = useState("")
-  const [editSubAmount, setEditSubAmount] = useState("")
-  const [editSubDescription, setEditSubDescription] = useState("")
-  const [editSubFrequency, setEditSubFrequency] = useState("")
-  const [editSubLastrun, setEditSubLastrun] = useState("")
-  const [subLastRun, setSubLastRun] = useState("")
-
-  const [editingIncomeId, setEditingIncomeId] = useState(null)
-  const [editIncomeAmount, setEditIncomeAmount] = useState("")
-  const [editIncomeSource, setEditIncomeSource] = useState("")
-  const [editIncomeNotes, setEditIncomeNotes] = useState("")
-
-  const [editingOneOffId, setEditingOneOffId] = useState(null)
-  const [editOneOffAmount, setEditOneOffAmount] = useState("")
-  const [editOneOffDescription, setEditOneOffDescription] = useState("")
-
   const [selectedDay, setSelectedDay] = useState(null)
 
-  async function handleSubmit() {
+  // Forms
+  const [newExpense, setNewExpense] = useState({ category: "", amount: "", description: "" })
+  const [filters, setFilters] = useState({ category: "", desc: "", dateA: "", dateB: "" })
+  const [editExpense, setEditExpense] = useState({ id: null, category: "", amount: "", description: "" })
+  const [newIncome, setNewIncome] = useState({ amount: "", source: "", notes: "" })
+  const [newOneOff, setNewOneOff] = useState({ amount: "", description: "" })
+  const [editIncome, setEditIncome] = useState({ id: null, amount: "", source: "", notes: "" })
+  const [editOneOff, setEditOneOff] = useState({ id: null, amount: "", description: "" })
+  const [newSub, setNewSub] = useState({ category: "", amount: "", description: "", frequency: "", lastRun: "" })
+  const [editSub, setEditSub] = useState({ id: null, category: "", amount: "", description: "", frequency: "", lastRun: "" })
 
-      if (!category) {
+  async function handleSubmit() {
+    if (!newExpense.category) {
       setError("Please select a category")
       return
     }
-
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!newExpense.amount || parseFloat(newExpense.amount) <= 0) {
       setError("Please enter a valid amount")
       return
     }
-
-    if (!description.trim()) {
+    if (!newExpense.description.trim()) {
       setError("Please enter a description")
       return
     }
-
     setError("")
-
-    try{
+    try {
       const response = await fetch("http://localhost:8000/expenses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category, amount: parseFloat(amount), description })
+        body: JSON.stringify({ category: newExpense.category, amount: parseFloat(newExpense.amount), description: newExpense.description })
       })
       if (!response.ok) throw new Error("")
       const data = await response.json()
       setExpenses([data.expense, ...expenses])
-      setAmount("")
-      setDescription("")
+      setNewExpense(prev => ({ ...prev, amount: "", description: "" }))
       fetchSummary()
-      } catch (error) {
-        setError("Failed to connect to Back end, is the Server Running?")
-        return
-      }
-      
-      
-
-      
+    } catch (error) {
+      setError("Failed to connect to Back end, is the Server Running?")
+      return
+    }
   }
 
   async function handleDelete(id) {
     try {
       const response = await fetch(`http://localhost:8000/expenses/${id}`, {
-      method: "DELETE"
-    })
-    if (!response.ok) throw new Error("Failed to delete expense")
-    setExpenses(expenses.filter(expense => expense.id !== id))
-    fetchSummary()
-
+        method: "DELETE"
+      })
+      if (!response.ok) throw new Error("Failed to delete expense")
+      setExpenses(expenses.filter(expense => expense.id !== id))
+      fetchSummary()
     } catch (error) {
       setError("Failed to connect to Back end, is the Server Running?")
       return
     }
-
   }
 
   useEffect(() => {
-    
-    async function fetchExpenses(){
-       try {
+    async function fetchExpenses() {
+      try {
         const response = await fetch("http://localhost:8000/expenses")
         if (!response.ok) throw new Error("Failed to fetch expenses")
         const data = await response.json()
-        data.sort((a, b) => new Date(b.date) -new Date(a.date))
+        data.sort((a, b) => new Date(b.date) - new Date(a.date))
         setExpenses(data)
-       }
-       catch (error) {
+      } catch (error) {
         setError("Failed to connect to Back end, is the Server Running?")
-       } finally {
+      } finally {
         setLoading(false)
-       }
-      
-
-    } 
+      }
+    }
 
     fetchExpenses()
     fetchSummary()
@@ -154,7 +105,6 @@ function App() {
     fetchIncome()
     fetchBalance("")
     fetchSubscriptions()
-
   }, [])
 
   async function fetchSummary() {
@@ -166,127 +116,111 @@ function App() {
     } catch (error) {
       setError("Failed to connect to Back end, is the Server Running?")
     }
-      
-
-    }
-  
-    
+  }
 
   function handleEdit(expense) {
-    setEditingId(expense.id)
-    setEditCategory(expense.category)
-    setEditAmount(expense.amount)
-    setEditDescription(expense.description)
+    setEditExpense({ id: expense.id, category: expense.category, amount: expense.amount, description: expense.description })
   }
 
   async function handleSave(id) {
-    if (!editCategory) {
+    if (!editExpense.category) {
       setError("Please select a category")
       return
     }
-    
-    if (!editAmount || parseFloat(editAmount) <= 0) {
+    if (!editExpense.amount || parseFloat(editExpense.amount) <= 0) {
       setError("Please enter a valid amount")
       return
     }
-    if (!editDescription.trim()) {
+    if (!editExpense.description.trim()) {
       setError("Please enter a description")
       return
     }
-
     setError("")
-
     try {
       const response = await fetch(`http://localhost:8000/expenses/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category: editCategory, amount: parseFloat(editAmount), description: editDescription })
-    })
-
-    if (!response.ok) throw new Error("")
+        body: JSON.stringify({ category: editExpense.category, amount: parseFloat(editExpense.amount), description: editExpense.description })
+      })
+      if (!response.ok) throw new Error("")
       const data = await response.json()
       setExpenses(expenses.map(expense => expense.id === id ? data.expense : expense))
-      setEditingId(null)
+      setEditExpense({ id: null, category: "", amount: "", description: "" })
       fetchSummary()
-    }catch (error) {
+    } catch (error) {
       setError("Failed to connect to Back end, is the Server Running?")
       return
     }
   }
 
-  const filteredExpenses = filterCategory === "__income__" ? [] : expenses.filter(expense => {
-    const matchesDate = 
-      (filterDateA === "" || new Date(expense.date) >= new Date(filterDateA)) &&
-      (filterDateB === "" || new Date(expense.date) <= new Date(filterDateB))
-    const matchesDesc = expense.description.toLowerCase().includes(filterDesc.toLowerCase())
-    const matchesCategory = filterCategory === "" || expense.category === filterCategory
+  const filteredExpenses = filters.category === "__income__" ? [] : expenses.filter(expense => {
+    const matchesDate =
+      (filters.dateA === "" || new Date(expense.date) >= new Date(filters.dateA)) &&
+      (filters.dateB === "" || new Date(expense.date) <= new Date(filters.dateB))
+    const matchesDesc = expense.description.toLowerCase().includes(filters.desc.toLowerCase())
+    const matchesCategory = filters.category === "" || expense.category === filters.category
     return matchesDate && matchesDesc && matchesCategory
-})
+  })
 
   const fillMissingDates = (data) => {
     if (data.length == 0) return data
-    const filled =[]
+    const filled = []
     const start = new Date(data[0].date)
     const end = new Date(data[data.length - 1].date)
-    const dateMap = Object.fromEntries(data.map(d =>[d.date, d.total]))
+    const dateMap = Object.fromEntries(data.map(d => [d.date, d.total]))
 
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split("T")[0]
       filled.push({
-      date: dateStr.slice(5),   
-      fullDate: dateStr,         
-      total: dateMap[dateStr] || 0
-    })}
+        date: dateStr.slice(5),
+        fullDate: dateStr,
+        total: dateMap[dateStr] || 0
+      })
+    }
     return filled
   }
 
-const sevenDaysAgo = new Date ()
-sevenDaysAgo.setDate(sevenDaysAgo.getDate()-7)
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-const selectedDaySummary = selectedDay
-  ? expenses
-      .filter(e => e.date.startsWith(selectedDay))
-      .reduce((acc, e) => {
-        acc[e.category] = (acc[e.category] || 0) + e.amount
-        return acc
-      }, {})
-  : null
+  const selectedDaySummary = selectedDay
+    ? expenses
+        .filter(e => e.date.startsWith(selectedDay))
+        .reduce((acc, e) => {
+          acc[e.category] = (acc[e.category] || 0) + e.amount
+          return acc
+        }, {})
+    : null
 
-const recentExpenses = expenses.filter( expense =>
-  new Date(expense.date) >= sevenDaysAgo
+  const recentExpenses = expenses.filter(expense =>
+    new Date(expense.date) >= sevenDaysAgo
   )
 
   const trendData = fillMissingDates(
     Object.entries(
-      recentExpenses.reduce((acc, expense) =>{
-        const date = expense.date.split( " ")[0]
+      recentExpenses.reduce((acc, expense) => {
+        const date = expense.date.split(" ")[0]
         acc[date] = (acc[date] || 0) + expense.amount
         return acc
       }, {})
-    ).map(([date, total]) => ({ date, total}))
+    ).map(([date, total]) => ({ date, total }))
       .sort((a, b) => new Date(a.date) - new Date(b.date))
-      
   )
-  console.log(trendData)
 
   function exportToCSV() {
     const headers = ["Date", "Category", "Amount", "Description"]
-    const rows = expenses.map( e=> [e.date, e.category, e.amount, e.description])
-
-    const csvContent = [headers,...rows]
-      .map( row => row.join(","))
+    const rows = expenses.map(e => [e.date, e.category, e.amount, e.description])
+    const csvContent = [headers, ...rows]
+      .map(row => row.join(","))
       .join("\n")
-
-    const blob = new Blob([csvContent], {type: "text/csv"})
+    const blob = new Blob([csvContent], { type: "text/csv" })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
     link.download = "millebelles_ledger.csv"
     link.click()
     URL.revokeObjectURL(url)
-
   }
-
 
   async function fetchBudgets() {
     try {
@@ -299,8 +233,6 @@ const recentExpenses = expenses.filter( expense =>
       return
     }
   }
-  
-  
 
   async function handleSetBudget(category, limit) {
     if (!limit || parseFloat(limit) <= 0) return
@@ -324,7 +256,7 @@ const recentExpenses = expenses.filter( expense =>
       })
       if (!response.ok) throw new Error("")
       fetchBudgets()
-      setBudgetInputs({...budgetInputs, [category]: ""})
+      setBudgetInputs({ ...budgetInputs, [category]: "" })
     } catch (error) {
       setError("could not remove budget")
     }
@@ -359,38 +291,37 @@ const recentExpenses = expenses.filter( expense =>
   }
 
   async function handleAddIncome() {
-    if (!incomeAmount || parseFloat(incomeAmount) <= 0) { setError("Please enter a valid amount"); return }
-    if (!incomeSource.trim()) { setError("Please enter a source"); return }
+    if (!newIncome.amount || parseFloat(newIncome.amount) <= 0) { setError("Please enter a valid amount"); return }
+    if (!newIncome.source.trim()) { setError("Please enter a source"); return }
     setError("")
     try {
       const res = await fetch("http://localhost:8000/income", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: parseFloat(incomeAmount), source: incomeSource, notes: incomeNotes })
+        body: JSON.stringify({ amount: parseFloat(newIncome.amount), source: newIncome.source, notes: newIncome.notes })
       })
-      
       if (!res.ok) throw new Error("")
       const data = await res.json()
       setIncome(prev => [data.income, ...prev])
-      setIncomeAmount(""); setIncomeSource(""); setIncomeNotes("")
+      setNewIncome({ amount: "", source: "", notes: "" })
       fetchBalance(balanceMonth)
     } catch { setError("Failed to add income") }
   }
 
   async function handleAddOneOff() {
-    if (!oneOffAmount || parseFloat(oneOffAmount) <= 0) { setError("Please enter a valid amount"); return }
-    if (!oneOffDescription.trim()) { setError("Please enter a description"); return }
+    if (!newOneOff.amount || parseFloat(newOneOff.amount) <= 0) { setError("Please enter a valid amount"); return }
+    if (!newOneOff.description.trim()) { setError("Please enter a description"); return }
     setError("")
     try {
       const res = await fetch("http://localhost:8000/income/one-off", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: parseFloat(oneOffAmount), description: oneOffDescription })
+        body: JSON.stringify({ amount: parseFloat(newOneOff.amount), description: newOneOff.description })
       })
       if (!res.ok) throw new Error("")
       const data = await res.json()
       setOneOffIncome(prev => [data.income, ...prev])
-      setOneOffAmount(""); setOneOffDescription("")
+      setNewOneOff({ amount: "", description: "" })
       fetchBalance(balanceMonth)
     } catch { setError("Failed to add one-off income") }
   }
@@ -411,216 +342,198 @@ const recentExpenses = expenses.filter( expense =>
     } catch { setError("Failed to delete one-off income entry") }
   }
 
-  async function fetchSubscriptions(){
-    try{
+  async function fetchSubscriptions() {
+    try {
       const response = await fetch("http://localhost:8000/recurring_expenses")
       if (!response.ok) throw new Error("failed to fetch subscriptions")
       const subs = await response.json()
-    setSubscriptions(subs)
-    }
-    catch (error) {
+      setSubscriptions(subs)
+    } catch (error) {
       setError("Failed to connect to Back end, is the Server Running?")
-       } 
     }
- 
-  
-  async function handleEditIncome(id) {
+  }
+
+  function handleEditIncome(id) {
     const entry = income.find(i => i.id === id)
     if (entry) {
-      setEditingIncomeId(id)
-      setEditIncomeAmount(entry.amount.toString())
-      setEditIncomeSource(entry.source)
-      setEditIncomeNotes(entry.notes)
+      setEditIncome({ id, amount: entry.amount.toString(), source: entry.source, notes: entry.notes })
     }
   }
 
   function handleEditOneOff(id) {
     const oneOff = oneOffIncome.find(i => i.id === id)
     if (oneOff) {
-      setEditingOneOffId(id)
-      setEditOneOffAmount(oneOff.amount.toString())
-      setEditOneOffDescription(oneOff.description)
+      setEditOneOff({ id, amount: oneOff.amount.toString(), description: oneOff.description })
     }
   }
 
   async function handleSaveIncome(id) {
-    if (!editIncomeAmount || parseFloat(editIncomeAmount) <= 0) { setError("Please enter a valid amount"); return }
-    if (!editIncomeSource.trim()) { setError("Please enter a source"); return }
+    if (!editIncome.amount || parseFloat(editIncome.amount) <= 0) { setError("Please enter a valid amount"); return }
+    if (!editIncome.source.trim()) { setError("Please enter a source"); return }
     setError("")
     try {
       const res = await fetch(`http://localhost:8000/income/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: parseFloat(editIncomeAmount), source: editIncomeSource, notes: editIncomeNotes })
+        body: JSON.stringify({ amount: parseFloat(editIncome.amount), source: editIncome.source, notes: editIncome.notes })
       })
       if (!res.ok) throw new Error("")
       const data = await res.json()
       setIncome(income.map(i => i.id === id ? data.income : i))
-      setEditingIncomeId(null)
+      setEditIncome({ id: null, amount: "", source: "", notes: "" })
       fetchBalance(balanceMonth)
     } catch { setError("Failed to update income entry") }
   }
 
   async function handleSaveOneOff(id) {
-    if (!editOneOffAmount || parseFloat(editOneOffAmount) <= 0) { setError("Please enter a valid amount"); return }
-    if (!editOneOffDescription.trim()) { setError("Please enter a description"); return }
+    if (!editOneOff.amount || parseFloat(editOneOff.amount) <= 0) { setError("Please enter a valid amount"); return }
+    if (!editOneOff.description.trim()) { setError("Please enter a description"); return }
     setError("")
     try {
       const res = await fetch(`http://localhost:8000/income/one-off/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: parseFloat(editOneOffAmount), description: editOneOffDescription })
+        body: JSON.stringify({ amount: parseFloat(editOneOff.amount), description: editOneOff.description })
       })
       if (!res.ok) throw new Error("")
       const data = await res.json()
       setOneOffIncome(oneOffIncome.map(i => i.id === id ? data.income : i))
-      setEditingOneOffId(null)
+      setEditOneOff({ id: null, amount: "", description: "" })
       fetchBalance(balanceMonth)
     } catch { setError("Failed to update one-off income entry") }
   }
 
   async function handleAddSubscription() {
-    if (!subCategory) {
+    if (!newSub.category) {
       setError("Please select a category")
       return
     }
-    if (!subAmount || parseFloat(subAmount) <= 0) {
+    if (!newSub.amount || parseFloat(newSub.amount) <= 0) {
       setError("Please enter a valid amount")
       return
     }
-    if (!subDescription.trim()) {
+    if (!newSub.description.trim()) {
       setError("Please enter a description")
       return
     }
-    if(!subFrequency) {
-      setError("Please select a freqeuncy")
+    if (!newSub.frequency) {
+      setError("Please select a frequency")
       return
     }
     setError("")
-
     try {
       const response = await fetch("http://localhost:8000/recurring_expenses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-          category: subCategory, 
-          amount: parseFloat(subAmount), 
-          description: subDescription, 
-          frequency: subFrequency,
-          last_run: subLastRun || null
+        body: JSON.stringify({
+          category: newSub.category,
+          amount: parseFloat(newSub.amount),
+          description: newSub.description,
+          frequency: newSub.frequency,
+          last_run: newSub.lastRun || null
         })
       })
       if (!response.ok) throw new Error("")
       const data = await response.json()
       setSubscriptions([data.sub, ...subscriptions])
-      setSubCategory("")
-      setSubAmount("")
-      setSubDescription("")
-      setSubFrequency("")
-  } catch (error) {
-        setError("Failed to connect to Back end, is the Server Running?")
-        return
-  }}
-  
+      setNewSub({ category: "", amount: "", description: "", frequency: "", lastRun: "" })
+    } catch (error) {
+      setError("Failed to connect to Back end, is the Server Running?")
+      return
+    }
+  }
+
   async function handleDeleteSubscription(id) {
-    try{
+    try {
       const response = await fetch(`http://localhost:8000/recurring_expenses/${id}`, {
-      method: "DELETE"
-    })
-      if (!response.ok) throw new Error("failed to fetch subscriptions")
+        method: "DELETE"
+      })
+      if (!response.ok) throw new Error("failed to delete subscription")
       setSubscriptions(subscriptions.filter(subs => subs.id !== id))
     } catch (error) {
-          setError("Failed to connect to Back end, is the Server Running?")
-          return
+      setError("Failed to connect to Back end, is the Server Running?")
+      return
+    }
+  }
 
-    }}  
-
-  async function handleEditSubscription(id) {
-    if (!editSubCategory) {
+  async function handleSaveSubscription(id) {
+    if (!editSub.category) {
       setError("Please select a category")
       return
     }
-    if (!editSubAmount || parseFloat(editSubAmount) <= 0) {
+    if (!editSub.amount || parseFloat(editSub.amount) <= 0) {
       setError("Please enter a valid amount")
       return
     }
-    if (!editSubDescription.trim()) {
+    if (!editSub.description.trim()) {
       setError("Please enter a description")
       return
     }
-    if(!editSubFrequency) {
-      setError("Please select a freqeuncy")
+    if (!editSub.frequency) {
+      setError("Please select a frequency")
       return
     }
-    if(!editSubLastrun) {
+    if (!editSub.lastRun) {
       setError("Please select a start date")
+      return
     }
     setError("")
-
     try {
       const response = await fetch(`http://localhost:8000/recurring_expenses/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ 
-          category: editSubCategory, 
-          amount: parseFloat(editSubAmount), 
-          description: editSubDescription, 
-          frequency: editSubFrequency, 
-          last_run: editSubLastrun
+        body: JSON.stringify({
+          category: editSub.category,
+          amount: parseFloat(editSub.amount),
+          description: editSub.description,
+          frequency: editSub.frequency,
+          last_run: editSub.lastRun
         })
       })
       if (!response.ok) throw new Error("")
       const data = await response.json()
-      setSubscriptions(subscriptions.map(subs => subs.id === id ? data.subscription: subs))
-      setEditSubCategory("")
-      setEditSubAmount("")
-      setEditSubDescription("")
-      setEditSubFrequency("") 
-      setEditingSubId(null)
-    }catch (error) {
+      setSubscriptions(subscriptions.map(subs => subs.id === id ? data.subscription : subs))
+      setEditSub({ id: null, category: "", amount: "", description: "", frequency: "", lastRun: "" })
+    } catch (error) {
       setError("Failed to connect to Back end, is the Server Running?")
       return
     }
-
   }
 
-  async function handleEditSub(subscription) {
-  setEditingSubId(subscription.id)
-  setEditSubCategory(subscription.category)
-  setEditSubAmount(subscription.amount)
-  setEditSubDescription(subscription.description)
-  setEditSubFrequency(subscription.frequency)
-  setEditSubLastrun(subscription.last_run)
-}
-  async function handleToggleActive(id, currentActive) {
-  try {
-    const response = await fetch(`http://localhost:8000/recurring_expenses/${id}/toggle`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !currentActive })
+  function handleEditSub(subscription) {
+    setEditSub({
+      id: subscription.id,
+      category: subscription.category,
+      amount: subscription.amount,
+      description: subscription.description,
+      frequency: subscription.frequency,
+      lastRun: subscription.last_run
     })
-    if (!response.ok) throw new Error("")
-    const data = await response.json()
-    setSubscriptions(subscriptions.map(sub => sub.id === id ? data.subscription : sub))
-  } catch {
-    setError("Failed to toggle subscription")
   }
-}   
-  
-  
 
+  async function handleToggleActive(id, currentActive) {
+    try {
+      const response = await fetch(`http://localhost:8000/recurring_expenses/${id}/toggle`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !currentActive })
+      })
+      if (!response.ok) throw new Error("")
+      const data = await response.json()
+      setSubscriptions(subscriptions.map(sub => sub.id === id ? data.subscription : sub))
+    } catch {
+      setError("Failed to toggle subscription")
+    }
+  }
 
-return ( 
-    <div className = "container">
+  return (
+    <div className="container">
       <ParticleBackground />
-      
-      
-      
-      <div className = "header">
-        <img src={banker} alt="Banker" className="banker-img" />
-        <h1> Millibelles Bank </h1> 
-      </div>
 
+      <div className="header">
+        <img src={banker} alt="Banker" className="banker-img" />
+        <h1> Millibelles Bank </h1>
+      </div>
 
       <div className="table-wrapper">
         <img src={cornerTL} alt="Corner TL" className="corner-tl" />
@@ -634,113 +547,82 @@ return (
         />
 
         <ExpenseForm
-          category={category} setCategory={setCategory}
-          amount={amount} setAmount={setAmount}
-          description={description} setDescription={setDescription}
-          filterCategory={filterCategory} setFilterCategory={setFilterCategory}
-          filterDesc={filterDesc} setFilterDesc={setFilterDesc}
-          filterDateA={filterDateA} setFilterDateA={setFilterDateA}
-          filterDateB={filterDateB} setFilterDateB={setFilterDateB}
+          newExpense={newExpense} setNewExpense={setNewExpense}
+          filters={filters} setFilters={setFilters}
+          newIncome={newIncome} setNewIncome={setNewIncome}
+          newOneOff={newOneOff} setNewOneOff={setNewOneOff}
           onSubmit={handleSubmit}
-          onClearFilters={() => { setFilterCategory(""); setFilterDesc(""); setFilterDateA(""); setFilterDateB("") }}
-          incomeAmount={incomeAmount} setIncomeAmount={setIncomeAmount}
-          incomeSource={incomeSource} setIncomeSource={setIncomeSource}
-          incomeNotes={incomeNotes} setIncomeNotes={setIncomeNotes}
-          oneOffAmount={oneOffAmount} setOneOffAmount={setOneOffAmount}
-          oneOffDescription={oneOffDescription} setOneOffDescription={setOneOffDescription}
+          onClearFilters={() => setFilters({ category: "", desc: "", dateA: "", dateB: "" })}
           onAddIncome={handleAddIncome}
           onAddOneOff={handleAddOneOff}
         />
 
-
-      <div className="view-toggle-group">
-        <button className={`toggle-btn ${showView === "expenses" ? "toggle-active" : ""}`} onClick={() => setShowView("expenses")}>Ledger</button>
-        <button className={`toggle-btn ${showView === "summary" ? "toggle-active" : ""}`} onClick={() => setShowView("summary")}>Summary</button>
-        <button className={`toggle-btn ${showView === "subscriptions" ? "toggle-active" : ""}`} onClick={() => setShowView("subscriptions")}>Subscriptions</button>
-        {showView === "expenses" && <button className="toggle-btn" onClick={exportToCSV}>Export CSV ↓</button>}
-      </div>
-
-      { error && <p className = "error-message">{error}</p> }
-
-      {showView === "summary" ? (
-        <SummaryView
-          summary={summary}
-          budgets={budgets}
-          budgetInputs={budgetInputs}
-          setBudgetInputs={setBudgetInputs}
-          trendData={trendData}
-          sevenDaysAgo={sevenDaysAgo}
-          onSetBudget={handleSetBudget}
-          onRemoveBudget={handleRemoveBudget}
-          selectedDay={selectedDay}
-          setSelectedDay={setSelectedDay}
-          selectedDaySummary={selectedDaySummary}
-        />
-        
-) : showView === "subscriptions" ? (
-  <SubscriptionsView
-    subscriptions={subscriptions}
-    subCategory={subCategory} setSubCategory={setSubCategory}
-    subAmount={subAmount} setSubAmount={setSubAmount}
-    subDescription={subDescription} setSubDescription={setSubDescription}
-    subFrequency={subFrequency} setSubFrequency={setSubFrequency}
-    subLastRun={subLastRun} setSubLastRun={setSubLastRun}
-    editingSubId={editingSubId}
-    editSubCategory={editSubCategory} setEditSubCategory={setEditSubCategory}
-    editSubAmount={editSubAmount} setEditSubAmount={setEditSubAmount}
-    editSubDescription={editSubDescription} setEditSubDescription={setEditSubDescription}
-    editSubFrequency={editSubFrequency} setEditSubFrequency={setEditSubFrequency}
-    editSubLastrun={editSubLastrun} setEditSubLastrun={setEditSubLastrun}
-    onAdd={handleAddSubscription}
-    onDelete={handleDeleteSubscription}
-    onEdit={handleEditSub}
-    onSave={handleEditSubscription}
-    onToggleActive={handleToggleActive}
-    onCancelEdit={() => setEditingSubId(null)}
-  />
-) : (
-          loading ? (
-            <p className = 'loading-message'>Loading expenses...</p>
-          ) : (
-          
-        <div className="view-container" key = "table">
-          <ExpenseTable
-            filteredExpenses={filteredExpenses}
-            income={filterCategory === "__income__" ? income : filterCategory ? [] : income}
-            oneOffIncome={filterCategory === "__income__" ? oneOffIncome : filterCategory ? [] : oneOffIncome}
-            editingId={editingId}
-            editCategory={editCategory}
-            editAmount={editAmount}
-            editDescription={editDescription}
-            setEditCategory={setEditCategory}
-            setEditAmount={setEditAmount}
-            setEditDescription={setEditDescription}
-            onEdit={handleEdit}
-            onSave={handleSave}
-            onDelete={handleDelete}
-            onCancelEdit={() => setEditingId(null)}
-            onDeleteIncome={handleDeleteIncome}
-            onDeleteOneOff={handleDeleteOneOff}
-            editingIncomeId={editingIncomeId}
-            editIncomeAmount={editIncomeAmount} setEditIncomeAmount={setEditIncomeAmount}
-            editIncomeSource={editIncomeSource} setEditIncomeSource={setEditIncomeSource}
-            editIncomeNotes={editIncomeNotes} setEditIncomeNotes={setEditIncomeNotes}
-            editingOneOffId={editingOneOffId}
-            editOneOffAmount={editOneOffAmount} setEditOneOffAmount={setEditOneOffAmount}
-            editOneOffDescription={editOneOffDescription} setEditOneOffDescription={setEditOneOffDescription}
-            onEditIncome={handleEditIncome}
-            onSaveIncome={handleSaveIncome}
-            onEditOneOff={handleEditOneOff}
-            onSaveOneOff={handleSaveOneOff}
-            onCancelIncomeEdit={() => setEditingIncomeId(null)}
-            onCancelOneOffEdit={() => setEditingOneOffId(null)}
-          />
+        <div className="view-toggle-group">
+          <button className={`toggle-btn ${showView === "expenses" ? "toggle-active" : ""}`} onClick={() => setShowView("expenses")}>Ledger</button>
+          <button className={`toggle-btn ${showView === "summary" ? "toggle-active" : ""}`} onClick={() => setShowView("summary")}>Summary</button>
+          <button className={`toggle-btn ${showView === "subscriptions" ? "toggle-active" : ""}`} onClick={() => setShowView("subscriptions")}>Subscriptions</button>
+          {showView === "expenses" && <button className="toggle-btn" onClick={exportToCSV}>Export CSV ↓</button>}
         </div>
+
+        {error && <p className="error-message">{error}</p>}
+
+        {showView === "summary" ? (
+          <SummaryView
+            summary={summary}
+            budgets={budgets}
+            budgetInputs={budgetInputs}
+            setBudgetInputs={setBudgetInputs}
+            trendData={trendData}
+            sevenDaysAgo={sevenDaysAgo}
+            onSetBudget={handleSetBudget}
+            onRemoveBudget={handleRemoveBudget}
+            selectedDay={selectedDay}
+            setSelectedDay={setSelectedDay}
+            selectedDaySummary={selectedDaySummary}
+          />
+        ) : showView === "subscriptions" ? (
+          <SubscriptionsView
+            subscriptions={subscriptions}
+            newSub={newSub} setNewSub={setNewSub}
+            editSub={editSub} setEditSub={setEditSub}
+            onAdd={handleAddSubscription}
+            onDelete={handleDeleteSubscription}
+            onEdit={handleEditSub}
+            onSave={handleSaveSubscription}
+            onToggleActive={handleToggleActive}
+            onCancelEdit={() => setEditSub({ id: null, category: "", amount: "", description: "", frequency: "", lastRun: "" })}
+          />
+        ) : (
+          loading ? (
+            <p className="loading-message">Loading expenses...</p>
+          ) : (
+            <div className="view-container" key="table">
+              <ExpenseTable
+                filteredExpenses={filteredExpenses}
+                income={filters.category === "__income__" ? income : filters.category ? [] : income}
+                oneOffIncome={filters.category === "__income__" ? oneOffIncome : filters.category ? [] : oneOffIncome}
+                editExpense={editExpense} setEditExpense={setEditExpense}
+                editIncome={editIncome} setEditIncome={setEditIncome}
+                editOneOff={editOneOff} setEditOneOff={setEditOneOff}
+                onEdit={handleEdit}
+                onSave={handleSave}
+                onDelete={handleDelete}
+                onCancelEdit={() => setEditExpense({ id: null, category: "", amount: "", description: "" })}
+                onDeleteIncome={handleDeleteIncome}
+                onDeleteOneOff={handleDeleteOneOff}
+                onEditIncome={handleEditIncome}
+                onSaveIncome={handleSaveIncome}
+                onEditOneOff={handleEditOneOff}
+                onSaveOneOff={handleSaveOneOff}
+                onCancelIncomeEdit={() => setEditIncome({ id: null, amount: "", source: "", notes: "" })}
+                onCancelOneOffEdit={() => setEditOneOff({ id: null, amount: "", description: "" })}
+              />
+            </div>
           )
         )}
-      
+
       </div>
-  </div>
+    </div>
   )
 }
 

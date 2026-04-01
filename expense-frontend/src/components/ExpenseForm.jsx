@@ -1,19 +1,12 @@
 import { useState } from "react"
+import { CATEGORIES } from "../constants"
 
 function ExpenseForm({
-  category, setCategory,
-  amount, setAmount,
-  description, setDescription,
-  filterCategory, setFilterCategory,
-  filterDesc, setFilterDesc,
-  filterDateA, setFilterDateA,
-  filterDateB, setFilterDateB,
+  newExpense, setNewExpense,
+  filters, setFilters,
+  newIncome, setNewIncome,
+  newOneOff, setNewOneOff,
   onSubmit, onClearFilters,
-  incomeAmount, setIncomeAmount,
-  incomeSource, setIncomeSource,
-  incomeNotes, setIncomeNotes,
-  oneOffAmount, setOneOffAmount,
-  oneOffDescription, setOneOffDescription,
   onAddIncome, onAddOneOff
 }) {
   const [formMode, setFormMode] = useState("expense")
@@ -28,8 +21,8 @@ function ExpenseForm({
           <input
             className="form-input"
             type="date"
-            value={filterDateA}
-            onChange={(e) => setFilterDateA(e.target.value)}
+            value={filters.dateA}
+            onChange={(e) => setFilters(prev => ({ ...prev, dateA: e.target.value }))}
           />
         </div>
 
@@ -40,8 +33,8 @@ function ExpenseForm({
           <input
             className="form-input"
             type="date"
-            value={filterDateB}
-            onChange={(e) => setFilterDateB(e.target.value)}
+            value={filters.dateB}
+            onChange={(e) => setFilters(prev => ({ ...prev, dateB: e.target.value }))}
           />
         </div>
 
@@ -49,26 +42,17 @@ function ExpenseForm({
           className="form-input"
           type="text"
           placeholder="Search description..."
-          value={filterDesc}
-          onChange={(e) => setFilterDesc(e.target.value)}
+          value={filters.desc}
+          onChange={(e) => setFilters(prev => ({ ...prev, desc: e.target.value }))}
         />
 
         <select
           className="form-select"
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
+          value={filters.category}
+          onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
         >
           <option value="">All Categories</option>
-          <option value="Food and Dining">Food and Dining</option>
-          <option value="Travel">Travel</option>
-          <option value="Utilities">Utilities</option>
-          <option value="Entertainment">Entertainment</option>
-          <option value="Upgrades">Upgrades</option>
-          <option value="Health and Fitness">Health and Fitness</option>
-          <option value="Education">Education</option>
-          <option value="Shopping">Shopping</option>
-          <option value="Groceries">Groceries</option>
-          <option value="Miscellaneous">Miscellaneous</option>
+          {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           <option value="__income__">Income</option>
         </select>
 
@@ -92,39 +76,28 @@ function ExpenseForm({
       {formMode === "expense" ? (
         <>
           <div className="form-fields">
-            <select className="form-select" value={category} onChange={(e) => setCategory(e.target.value)}>
+            <select className="form-select" value={newExpense.category} onChange={(e) => setNewExpense(prev => ({ ...prev, category: e.target.value }))}>
               <option value="">Select a category</option>
-              <option value="Food and Dining">Food and Dining</option>
-              <option value="Travel">Travel</option>
-              <option value="Utilities">Utilities</option>
-              <option value="Entertainment">Entertainment</option>
-              <option value="Upgrades">Upgrades</option>
-              <option value="Health and Fitness">Health and Fitness</option>
-              <option value="Education">Education</option>
-              <option value="Shopping">Shopping</option>
-              <option value="Groceries">Groceries</option>
-              <option value="Miscellaneous">Miscellaneous</option>
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <input className="form-input" type="number" placeholder="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} />
-            <input className="form-input" type="text" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+            <input className="form-input" type="number" placeholder="Amount" value={newExpense.amount} onChange={(e) => setNewExpense(prev => ({ ...prev, amount: e.target.value }))} />
+            <input className="form-input" type="text" placeholder="Description" value={newExpense.description} onChange={(e) => setNewExpense(prev => ({ ...prev, description: e.target.value }))} />
             <button className="btn-add" onClick={onSubmit}>Add</button>
           </div>
         </>
       ) : (
         <>
-          
-
           {incomeType === "pay" ? (
             <div className="form-fields">
-              <input className="form-input" type="number" placeholder="Amount" value={incomeAmount} onChange={(e) => setIncomeAmount(e.target.value)} />
-              <input className="form-input" type="text" placeholder="Source (e.g. Work)" value={incomeSource} onChange={(e) => setIncomeSource(e.target.value)} />
-              <input className="form-input" type="text" placeholder="Notes (optional, e.g. 11hrs @ $24)" value={incomeNotes} onChange={(e) => setIncomeNotes(e.target.value)} />
+              <input className="form-input" type="number" placeholder="Amount" value={newIncome.amount} onChange={(e) => setNewIncome(prev => ({ ...prev, amount: e.target.value }))} />
+              <input className="form-input" type="text" placeholder="Source (e.g. Work)" value={newIncome.source} onChange={(e) => setNewIncome(prev => ({ ...prev, source: e.target.value }))} />
+              <input className="form-input" type="text" placeholder="Notes (optional, e.g. 11hrs @ $24)" value={newIncome.notes} onChange={(e) => setNewIncome(prev => ({ ...prev, notes: e.target.value }))} />
               <button className="btn-add" onClick={onAddIncome}>Add</button>
             </div>
           ) : (
             <div className="form-fields">
-              <input className="form-input" type="number" placeholder="Amount" value={oneOffAmount} onChange={(e) => setOneOffAmount(e.target.value)} />
-              <input className="form-input" type="text" placeholder="Description (e.g. Sold old laptop)" value={oneOffDescription} onChange={(e) => setOneOffDescription(e.target.value)} />
+              <input className="form-input" type="number" placeholder="Amount" value={newOneOff.amount} onChange={(e) => setNewOneOff(prev => ({ ...prev, amount: e.target.value }))} />
+              <input className="form-input" type="text" placeholder="Description (e.g. Sold old laptop)" value={newOneOff.description} onChange={(e) => setNewOneOff(prev => ({ ...prev, description: e.target.value }))} />
               <button className="btn-add" onClick={onAddOneOff}>Add</button>
             </div>
           )}

@@ -1,14 +1,12 @@
-function ExpenseTable({ 
-  filteredExpenses, income, oneOffIncome, 
-  editingId, editCategory, editAmount, editDescription, 
-  setEditCategory, setEditAmount, setEditDescription, 
-  onEdit, onSave, onDelete, onCancelEdit, 
+import { CATEGORIES } from "../constants"
+
+function ExpenseTable({
+  filteredExpenses, income, oneOffIncome,
+  editExpense, setEditExpense,
+  editIncome, setEditIncome,
+  editOneOff, setEditOneOff,
+  onEdit, onSave, onDelete, onCancelEdit,
   onDeleteIncome, onDeleteOneOff,
-  editingIncomeId, editIncomeAmount, setEditIncomeAmount,
-  editIncomeSource, setEditIncomeSource,
-  editIncomeNotes, setEditIncomeNotes,
-  editingOneOffId, editOneOffAmount, setEditOneOffAmount,
-  editOneOffDescription, setEditOneOffDescription,
   onEditIncome, onSaveIncome,
   onEditOneOff, onSaveOneOff,
   onCancelIncomeEdit, onCancelOneOffEdit
@@ -36,16 +34,16 @@ function ExpenseTable({
           const isIncome = row.rowType === "pay" || row.rowType === "oneoff"
 
           if (isIncome) {
-            const isEditingThisIncome = row.rowType === "pay" && editingIncomeId === row.id
-            const isEditingThisOneOff = row.rowType === "oneoff" && editingOneOffId === row.id
+            const isEditingThisIncome = row.rowType === "pay" && editIncome.id === row.id
+            const isEditingThisOneOff = row.rowType === "oneoff" && editOneOff.id === row.id
 
             if (isEditingThisIncome) {
               return (
                 <tr key={row.id} className="row-income">
                   <td>{row.date}</td>
-                  <td><input className="form-input" type="text" value={editIncomeSource} onChange={e => setEditIncomeSource(e.target.value)} /></td>
-                  <td><input className="form-input" type="number" value={editIncomeAmount} onChange={e => setEditIncomeAmount(e.target.value)} /></td>                  
-                  <td><input className="form-input" type="text" value={editIncomeNotes} onChange={e => setEditIncomeNotes(e.target.value)} /></td>
+                  <td><input className="form-input" type="text" value={editIncome.source} onChange={e => setEditIncome(prev => ({ ...prev, source: e.target.value }))} /></td>
+                  <td><input className="form-input" type="number" value={editIncome.amount} onChange={e => setEditIncome(prev => ({ ...prev, amount: e.target.value }))} /></td>
+                  <td><input className="form-input" type="text" value={editIncome.notes} onChange={e => setEditIncome(prev => ({ ...prev, notes: e.target.value }))} /></td>
                   <td>
                     <div className="subscriptions-action-cell">
                       <button className="btn-add" onClick={() => onSaveIncome(row.id)}>Save</button>
@@ -60,8 +58,8 @@ function ExpenseTable({
               return (
                 <tr key={row.id} className="row-income">
                   <td>{row.date}</td>
-                  <td><input className="form-input" type="number" value={editOneOffAmount} onChange={e => setEditOneOffAmount(e.target.value)} /></td>
-                  <td><input className="form-input" type="text" value={editOneOffDescription} onChange={e => setEditOneOffDescription(e.target.value)} /></td>
+                  <td><input className="form-input" type="number" value={editOneOff.amount} onChange={e => setEditOneOff(prev => ({ ...prev, amount: e.target.value }))} /></td>
+                  <td><input className="form-input" type="text" value={editOneOff.description} onChange={e => setEditOneOff(prev => ({ ...prev, description: e.target.value }))} /></td>
                   <td>—</td>
                   <td>
                     <div className="subscriptions-action-cell">
@@ -77,7 +75,7 @@ function ExpenseTable({
               <tr key={row.id} className="row-income">
                 <td>{row.date}</td>
                 <td>{row.source}</td>
-                <td className="income-positive">+{row.amount} Geo</td>                
+                <td className="income-positive">+{row.amount} Geo</td>
                 <td>{row.notes || "—"}</td>
                 <td>
                   <div className="subscriptions-action-cell">
@@ -91,25 +89,16 @@ function ExpenseTable({
 
           return (
             <tr key={row.id} className="row-expense">
-              {editingId === row.id ? (
+              {editExpense.id === row.id ? (
                 <>
                   <td>{row.date}</td>
                   <td>
-                    <select className="form-select" value={editCategory} onChange={(e) => setEditCategory(e.target.value)}>
-                      <option value="Food and Dining">Food and Dining</option>
-                      <option value="Travel">Travel</option>
-                      <option value="Utilities">Utilities</option>
-                      <option value="Entertainment">Entertainment</option>
-                      <option value="Upgrades">Upgrades</option>
-                      <option value="Health and Fitness">Health and Fitness</option>
-                      <option value="Education">Education</option>
-                      <option value="Shopping">Shopping</option>
-                      <option value="Groceries">Groceries</option>
-                      <option value="Miscellaneous">Miscellaneous</option>
+                    <select className="form-select" value={editExpense.category} onChange={(e) => setEditExpense(prev => ({ ...prev, category: e.target.value }))}>
+                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </td>
-                  <td><input className="form-input" type="number" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} /></td>
-                  <td><input className="form-input" type="text" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} /></td>
+                  <td><input className="form-input" type="number" value={editExpense.amount} onChange={(e) => setEditExpense(prev => ({ ...prev, amount: e.target.value }))} /></td>
+                  <td><input className="form-input" type="text" value={editExpense.description} onChange={(e) => setEditExpense(prev => ({ ...prev, description: e.target.value }))} /></td>
                   <td>
                     <button className="btn-add" onClick={() => onSave(row.id)}>Save</button>
                     <button className="btn-delete" onClick={onCancelEdit}>Cancel</button>

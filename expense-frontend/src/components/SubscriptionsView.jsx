@@ -1,16 +1,9 @@
+import { CATEGORIES } from "../constants"
+
 function SubscriptionsView({
   subscriptions,
-  subCategory, setSubCategory,
-  subAmount, setSubAmount,
-  subDescription, setSubDescription,
-  subFrequency, setSubFrequency,
-  subLastRun, setSubLastRun,
-  editingSubId,
-  editSubCategory, setEditSubCategory,
-  editSubAmount, setEditSubAmount,
-  editSubDescription, setEditSubDescription,
-  editSubFrequency, setEditSubFrequency,
-  editSubLastrun, setEditSubLastrun,
+  newSub, setNewSub,
+  editSub, setEditSub,
   onAdd, onDelete, onEdit, onSave, onToggleActive, onCancelEdit
 }) {
 
@@ -30,30 +23,19 @@ function SubscriptionsView({
       <div className="form-container">
         <h2>Add Subscription</h2>
         <div className="form-fields">
-          <select className="form-select" value={subCategory} onChange={e => setSubCategory(e.target.value)}>
+          <select className="form-select" value={newSub.category} onChange={e => setNewSub(prev => ({ ...prev, category: e.target.value }))}>
             <option value="">Select a category</option>
-            <option value="Food and Dining">Food and Dining</option>
-            <option value="Travel">Travel</option>
-            <option value="Utilities">Utilities</option>
-            <option value="Entertainment">Entertainment</option>
-            <option value="Upgrades">Upgrades</option>
-            <option value="Health and Fitness">Health and Fitness</option>
-            <option value="Education">Education</option>
-            <option value="Shopping">Shopping</option>
-            <option value="Groceries">Groceries</option>
-            <option value="Miscellaneous">Miscellaneous</option>
+            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <input className="form-input" type="number" placeholder="Amount" value={subAmount} onChange={e => setSubAmount(e.target.value)} />
-          <input className="form-input" type="text" placeholder="Description (e.g. Netflix)" value={subDescription} onChange={e => setSubDescription(e.target.value)} />
-          <select className="form-select" value={subFrequency} onChange={e => setSubFrequency(e.target.value)}>
+          <input className="form-input" type="number" placeholder="Amount" value={newSub.amount} onChange={e => setNewSub(prev => ({ ...prev, amount: e.target.value }))} />
+          <input className="form-input" type="text" placeholder="Description (e.g. Netflix)" value={newSub.description} onChange={e => setNewSub(prev => ({ ...prev, description: e.target.value }))} />
+          <select className="form-select" value={newSub.frequency} onChange={e => setNewSub(prev => ({ ...prev, frequency: e.target.value }))}>
             <option value="">Frequency</option>
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
             <option value="yearly">Yearly</option>
           </select>
-          
-          <input className="form-input" type="date" placeholder="Last paid date" value={subLastRun} onChange={e => setSubLastRun(e.target.value)}/>
-          
+          <input className="form-input" type="date" placeholder="Last paid date" value={newSub.lastRun} onChange={e => setNewSub(prev => ({ ...prev, lastRun: e.target.value }))} />
           <button className="btn-add" onClick={onAdd}>Add</button>
         </div>
       </div>
@@ -74,34 +56,25 @@ function SubscriptionsView({
         <tbody>
           {[...subscriptions]
             .sort((a, b) => new Date(b.last_run) - new Date(a.last_run))
-            .map(sub => ( 
+            .map(sub => (
             <tr key={sub.id} className={sub.active ? "row-expense" : "row-inactive"}>
-              {editingSubId === sub.id ? (
+              {editSub.id === sub.id ? (
                 <>
-                  <td><input className="form-input" type="text" value={editSubDescription} onChange={e => setEditSubDescription(e.target.value)} /></td>
+                  <td><input className="form-input" type="text" value={editSub.description} onChange={e => setEditSub(prev => ({ ...prev, description: e.target.value }))} /></td>
                   <td>
-                    <select className="form-select" value={editSubCategory} onChange={e => setEditSubCategory(e.target.value)}>
-                      <option value="Food and Dining">Food and Dining</option>
-                      <option value="Travel">Travel</option>
-                      <option value="Utilities">Utilities</option>
-                      <option value="Entertainment">Entertainment</option>
-                      <option value="Upgrades">Upgrades</option>
-                      <option value="Health and Fitness">Health and Fitness</option>
-                      <option value="Education">Education</option>
-                      <option value="Shopping">Shopping</option>
-                      <option value="Groceries">Groceries</option>
-                      <option value="Miscellaneous">Miscellaneous</option>
+                    <select className="form-select" value={editSub.category} onChange={e => setEditSub(prev => ({ ...prev, category: e.target.value }))}>
+                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </td>
-                  <td><input className="form-input" type="number" value={editSubAmount} onChange={e => setEditSubAmount(e.target.value)} /></td>
+                  <td><input className="form-input" type="number" value={editSub.amount} onChange={e => setEditSub(prev => ({ ...prev, amount: e.target.value }))} /></td>
                   <td>
-                    <select className="form-select" value={editSubFrequency} onChange={e => setEditSubFrequency(e.target.value)}>
+                    <select className="form-select" value={editSub.frequency} onChange={e => setEditSub(prev => ({ ...prev, frequency: e.target.value }))}>
                       <option value="weekly">Weekly</option>
                       <option value="monthly">Monthly</option>
                       <option value="yearly">Yearly</option>
                     </select>
                   </td>
-                  <td><input className="form-input" type="date" value={editSubLastrun} onChange={e => setEditSubLastrun(e.target.value)} /></td>
+                  <td><input className="form-input" type="date" value={editSub.lastRun} onChange={e => setEditSub(prev => ({ ...prev, lastRun: e.target.value }))} /></td>
                   <td>—</td>
                   <td>
                     <div className="subscriptions-action-cell">

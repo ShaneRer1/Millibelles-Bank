@@ -42,8 +42,8 @@ class OneOffIncome(Base):
 class RecurringExpense(Base):
     __tablename__= "recurring_expenses"
     id = Column(String, primary_key=True)
-    amount = Column(Float)
     category = Column(String)
+    amount = Column(Float)    
     description = Column(String)
     frequency = Column(String)
     last_run = Column(String)

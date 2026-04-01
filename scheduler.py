@@ -25,7 +25,7 @@ def check_recurring_expenses():
                     amount = subscription.amount,
                     description = subscription.description  
                 )
-                subscription.last_run = due_date.strftime("%Y-%m-%d")
+                subscription.last_run = today.strftime("%Y-%m-%d")
                 db.add(new_expense)
                 db.commit()
                 

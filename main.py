@@ -72,7 +72,7 @@ def add_expense(expense: Expense, db: Session = Depends(get_db)):
     db.add(new_expense)
     db.commit()
     db.refresh(new_expense)
-    return { "messafe": "Expense added successfully", "expense":new_expense}
+    return { "message": "Expense added successfully", "expense":new_expense}
 
 
 # GET totals by category
@@ -244,18 +244,18 @@ def edit_income(income_id: str, entry: IncomeEntry, db: Session = Depends(get_db
 #GET new balance, filterable by month
 @app.get("/balance")
 def get_balance(month: str = None, db: Session = Depends(get_db)):
-    income_query = db.query(IncomeModel).all()
-    one_off_query = db.query(OneOffIncomeModel).all()
-    expense_query = db.query(ExpenseModel).all()
+    income_q = db.query(IncomeModel)
+    one_off_q = db.query(OneOffIncomeModel)
+    expense_q = db.query(ExpenseModel)
 
     if month:
-        income_query= [i for i in income_query if i.date.startswith(month)]
-        one_off_query= [i for i in one_off_query if i.date.startswith(month)]
-        expense_query= [e for e in expense_query if e.date.startswith(month)]
+        income_q = income_q.filter(IncomeModel.date.like(f"{month}%"))
+        one_off_q = one_off_q.filter(OneOffIncomeModel.date.like(f"{month}%"))
+        expense_q = expense_q.filter(ExpenseModel.date.like(f"{month}%"))
 
-    total_income = round(sum(i.amount for i in income_query), 2)
-    total_one_off = round(sum(i.amount for i in one_off_query), 2)
-    total_expenses = round(sum(e.amount for e in expense_query), 2)
+    total_income = round(sum(i.amount for i in income_q), 2)
+    total_one_off = round(sum(i.amount for i in one_off_q), 2)
+    total_expenses = round(sum(e.amount for e in expense_q), 2)
 
     net_balance = round(total_income + total_one_off - total_expenses, 2)
 

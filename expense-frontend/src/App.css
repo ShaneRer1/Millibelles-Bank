@@ -219,7 +219,7 @@ h2 {
   margin-top: 10px;
 }
 
-.btn-add, btn-delete {
+.btn-add, .btn-delete {
   min-width: 80px;
 }
 

@@ -60,7 +60,7 @@ function ParticleBackground() {
                 if (orb.x < -orb.radius) orb.x = canvas.width + orb.radius
                 if (orb.x > canvas.width + orb.radius) orb.x = -orb.radius
                 if (orb.y < -orb.radius) orb.y = canvas.height + orb.radius
-                if (orb.y > canvas.width + orb.radius) orb.y = -orb.radius
+                if (orb.y > canvas.height + orb.radius) orb.y = -orb.radius
 
                 const orbGradient = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.radius)
                 orbGradient.addColorStop(0, `rgba(${orb.color}, ${orb.opacity})`)
